@@ -12,7 +12,7 @@ const maintenanceRoutes = require('./routes/maintenanceRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001; // Changed from 5000 to 5001
 
 // Security middleware
 app.use(helmet());
@@ -26,9 +26,20 @@ app.use(limiter);
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    process.env.CLIENT_URL
+  ].filter(Boolean),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -67,7 +78,7 @@ app.use('*', (req, res) => {
 });
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/dt_vehicles_management', {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://prabhathdilshan2001:1234@as.gp7z1.mongodb.net/dt_petty_cash', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
@@ -78,8 +89,35 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/dt_vehicl
   require('./services/notificationService');
   console.log('Notification service initialized');
   
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 Deep Tec Vehicle Management Server is running on port ${PORT}`);
+    console.log(`📡 API Base URL: http://localhost:${PORT}/api`);
+    console.log(`🌐 Health Check: http://localhost:${PORT}/api/health`);
+  });
+  
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${PORT} is already in use.`);
+      console.log('🔧 Trying to find an available port...');
+      
+      // Try ports 5001-5010
+      for (let port = 5001; port <= 5010; port++) {
+        if (port !== PORT) {
+          console.log(`🔄 Trying port ${port}...`);
+          const newServer = app.listen(port, () => {
+            console.log(`✅ Server started successfully on port ${port}`);
+            console.log(`📡 API Base URL: http://localhost:${port}/api`);
+          });
+          newServer.on('error', () => {
+            console.log(`❌ Port ${port} is also in use`);
+          });
+          break;
+        }
+      }
+    } else {
+      console.error('Server error:', error);
+      process.exit(1);
+    }
   });
 })
 .catch((error) => {

@@ -4,22 +4,79 @@ const User = require('../models/User');
 // Authentication middleware
 const authenticate = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Get token from Authorization header
+    const authHeader = req.header('Authorization');
     
-    if (!token) {
+    if (!authHeader) {
       return res.status(401).json({
         success: false,
-        message: 'Access denied. No token provided.'
+        message: 'Access denied. No authorization header provided.'
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    // Check if JWT_SECRET is configured
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not configured in environment variables');
+      return res.status(500).json({
+        success: false,
+        message: 'Server configuration error.'
+      });
+    }
+
+    let token;
     
-    if (!user || !user.isActive) {
+    // Handle different token formats
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    } else {
+      token = authHeader; // Token without Bearer prefix
+    }
+
+    // Validate token format
+    if (!token || token.trim() === '') {
       return res.status(401).json({
         success: false,
-        message: 'Invalid token or user inactive.'
+        message: 'Access denied. Invalid token format.'
+      });
+    }
+
+    // Additional validation for token structure
+    const tokenParts = token.split('.');
+    if (tokenParts.length !== 3) {
+      console.error('JWT malformed - invalid token structure:', {
+        tokenLength: token.length,
+        parts: tokenParts.length,
+        token: token.substring(0, 20) + '...' // Log first 20 chars for debugging
+      });
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. Malformed token.'
+      });
+    }
+
+    // Verify and decode token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    if (!decoded.userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token payload.'
+      });
+    }
+
+    const user = await User.findById(decoded.userId).select('-password');
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not found.'
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'User account is inactive.'
       });
     }
 
@@ -27,10 +84,39 @@ const authenticate = async (req, res, next) => {
     req.userDetails = user;
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error('Authentication error:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      tokenPresent: !!req.header('Authorization'),
+      jwtSecretPresent: !!process.env.JWT_SECRET
+    });
+
+    // Handle specific JWT errors
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token format or signature.'
+      });
+    }
+
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token has expired.'
+      });
+    }
+
+    if (error.name === 'NotBeforeError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token not active yet.'
+      });
+    }
+
     res.status(401).json({
       success: false,
-      message: 'Invalid token.'
+      message: 'Authentication failed.'
     });
   }
 };

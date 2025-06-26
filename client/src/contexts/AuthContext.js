@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import authService from '../services/authService';
 
@@ -102,7 +102,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login function
-  const login = async (credentials) => {
+  const login = useCallback(async (credentials) => {
     try {
       dispatch({ type: AUTH_ACTIONS.LOGIN_START });
       
@@ -122,33 +122,33 @@ export const AuthProvider = ({ children }) => {
       });
       return { success: false, error: errorMessage };
     }
-  };
+  }, []);
 
   // Logout function
-  const logout = () => {
+  const logout = useCallback(() => {
     authService.logout();
     dispatch({ type: AUTH_ACTIONS.LOGOUT });
-  };
+  }, []);
 
   // Clear error function
-  const clearError = () => {
+  const clearError = useCallback(() => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
-  };
+  }, []);
 
   // Check permissions
-  const hasPermission = (permission) => {
+  const hasPermission = useCallback((permission) => {
     return state.user?.permissions?.includes(permission) || false;
-  };
+  }, [state.user?.permissions]);
 
   // Check role
-  const hasRole = (role) => {
+  const hasRole = useCallback((role) => {
     return state.user?.role === role;
-  };
+  }, [state.user?.role]);
 
   // Check if admin
-  const isAdmin = () => {
+  const isAdmin = useCallback(() => {
     return state.user?.role === 'admin';
-  };
+  }, [state.user?.role]);
 
   // Context value
   const value = useMemo(() => ({

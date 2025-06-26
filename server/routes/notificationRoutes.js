@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
-const auth = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 
 // Get all notifications for the authenticated user
-router.get('/', auth, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
@@ -49,7 +49,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get unread notifications for the authenticated user
-router.get('/unread', auth, async (req, res) => {
+router.get('/unread', authenticate, async (req, res) => {
   try {
     const notifications = await Notification.getUnreadForUser(req.user.id);
     res.json(notifications);
@@ -60,7 +60,7 @@ router.get('/unread', auth, async (req, res) => {
 });
 
 // Mark a notification as read
-router.patch('/:id/read', auth, async (req, res) => {
+router.patch('/:id/read', authenticate, async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id);
     
@@ -86,7 +86,7 @@ router.patch('/:id/read', auth, async (req, res) => {
 });
 
 // Mark all notifications as read for the authenticated user
-router.patch('/read-all', auth, async (req, res) => {
+router.patch('/read-all', authenticate, async (req, res) => {
   try {
     const notifications = await Notification.find({
       'recipients.user': req.user.id,
@@ -108,7 +108,7 @@ router.patch('/read-all', auth, async (req, res) => {
 });
 
 // Get notification statistics (admin only)
-router.get('/stats', auth, async (req, res) => {
+router.get('/stats', authenticate, async (req, res) => {
   try {
     // Check if user is admin
     if (!['admin', 'Admin'].includes(req.user.role)) {
@@ -151,7 +151,7 @@ router.get('/stats', auth, async (req, res) => {
 });
 
 // Create a manual notification (admin only)
-router.post('/', auth, [
+router.post('/', authenticate, [
   body('title').notEmpty().withMessage('Title is required'),
   body('message').notEmpty().withMessage('Message is required'),
   body('type').isIn(['general', 'maintenance_due', 'insurance_expiry', 'emission_expiry', 'revenue_expiry', 'license_expiry']).withMessage('Invalid notification type'),
@@ -209,7 +209,7 @@ router.post('/', auth, [
 });
 
 // Delete a notification (admin only)
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   try {
     // Check if user is admin
     if (!['admin', 'Admin'].includes(req.user.role)) {
@@ -231,7 +231,7 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // Trigger manual notification check (admin only)
-router.post('/check', auth, async (req, res) => {
+router.post('/check', authenticate, async (req, res) => {
   try {
     // Check if user is admin
     if (!['admin', 'Admin'].includes(req.user.role)) {
@@ -248,4 +248,5 @@ router.post('/check', auth, async (req, res) => {
   }
 });
 
+module.exports = router;
 module.exports = router;

@@ -10,6 +10,7 @@ import Vehicles from './pages/Vehicles';
 import VehicleDetail from './pages/VehicleDetail';
 import Maintenance from './pages/Maintenance';
 import MaintenanceDetail from './pages/MaintenanceDetail';
+import AddVehicle from './pages/AddVehicle';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
 import Reports from './pages/Reports';
@@ -37,6 +38,7 @@ function App() {
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="vehicles" element={<Vehicles />} />
+                <Route path="vehicles/add" element={<AddVehicle />} />
                 <Route path="vehicles/:id" element={<VehicleDetail />} />
                 <Route path="maintenance" element={<Maintenance />} />
                 <Route path="maintenance/:id" element={<MaintenanceDetail />} />

@@ -110,7 +110,7 @@ const updateMaintenanceValidation = [
 const approveMaintenanceValidation = [
   body('approvalNotes')
     .optional()
-    .trim()
+    .isString()
     .withMessage('Approval notes must be a string')
 ];
 
@@ -148,4 +148,5 @@ router.post('/:id/approve',
   approveMaintenance
 );
 
+module.exports = router;
 module.exports = router;
