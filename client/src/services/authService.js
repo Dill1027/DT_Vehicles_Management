@@ -37,13 +37,24 @@ export const authService = {
 
   // Get current user
   getCurrentUser: () => {
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr || userStr === 'undefined' || userStr === 'null') {
+        return null;
+      }
+      return JSON.parse(userStr);
+    } catch (error) {
+      console.error('Error parsing user data from localStorage:', error);
+      // Clear corrupted data
+      localStorage.removeItem('user');
+      return null;
+    }
   },
 
   // Check if user is authenticated
   isAuthenticated: () => {
-    return !!localStorage.getItem('token');
+    const token = localStorage.getItem('token');
+    return !!(token && token !== 'undefined' && token !== 'null');
   },
 
   // Check user permissions
@@ -66,7 +77,11 @@ export const authService = {
 
   // Get user token
   getToken: () => {
-    return localStorage.getItem('token');
+    const token = localStorage.getItem('token');
+    if (!token || token === 'undefined' || token === 'null') {
+      return null;
+    }
+    return token;
   },
 
   // Refresh token

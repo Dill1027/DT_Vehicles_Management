@@ -85,15 +85,24 @@ export const AuthProvider = ({ children }) => {
   // Load user on app start
   useEffect(() => {
     const loadUser = () => {
-      const token = authService.getToken();
-      const user = authService.getCurrentUser();
-      
-      if (token && user) {
-        dispatch({
-          type: AUTH_ACTIONS.LOAD_USER,
-          payload: { user, token }
-        });
-      } else {
+      try {
+        const token = authService.getToken();
+        const user = authService.getCurrentUser();
+        
+        if (token && user && authService.isAuthenticated()) {
+          dispatch({
+            type: AUTH_ACTIONS.LOAD_USER,
+            payload: { user, token }
+          });
+        } else {
+          // Clear any invalid data and set to logged out state
+          authService.logout();
+          dispatch({ type: AUTH_ACTIONS.LOGOUT });
+        }
+      } catch (error) {
+        console.error('Error loading user:', error);
+        // Clear corrupted data and logout
+        authService.logout();
         dispatch({ type: AUTH_ACTIONS.LOGOUT });
       }
     };

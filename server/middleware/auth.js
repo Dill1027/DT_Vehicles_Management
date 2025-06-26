@@ -33,7 +33,7 @@ const authenticate = async (req, res, next) => {
     }
 
     // Validate token format
-    if (!token || token.trim() === '') {
+    if (!token || token.trim() === '' || token === 'null' || token === 'undefined') {
       return res.status(401).json({
         success: false,
         message: 'Access denied. Invalid token format.'
@@ -51,6 +51,14 @@ const authenticate = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: 'Access denied. Malformed token.'
+      });
+    }
+
+    // Check if any part is empty
+    if (tokenParts.some(part => !part.trim())) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. Malformed token structure.'
       });
     }
 
@@ -87,9 +95,10 @@ const authenticate = async (req, res, next) => {
     console.error('Authentication error:', {
       name: error.name,
       message: error.message,
-      stack: error.stack,
       tokenPresent: !!req.header('Authorization'),
-      jwtSecretPresent: !!process.env.JWT_SECRET
+      jwtSecretPresent: !!process.env.JWT_SECRET,
+      url: req.url,
+      method: req.method
     });
 
     // Handle specific JWT errors
