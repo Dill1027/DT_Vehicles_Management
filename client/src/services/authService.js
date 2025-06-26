@@ -5,7 +5,8 @@ export const authService = {
   login: async (credentials) => {
     try {
       const response = await api.post('/auth/login', credentials);
-      const { token, user } = response.data;
+      const { data } = response.data; // Extract data from nested response
+      const { token, user } = data;
       
       // Store token and user info
       localStorage.setItem('token', token);

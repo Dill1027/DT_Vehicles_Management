@@ -16,6 +16,8 @@ import Profile from './pages/Profile';
 import Reports from './pages/Reports';
 import ProtectedRoute from './components/ProtectedRoute';
 
+
+
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,7 +32,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <div className="App">
             <Routes>
               <Route path="/login" element={<Login />} />

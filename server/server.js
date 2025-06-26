@@ -17,14 +17,7 @@ const PORT = process.env.PORT || 5001; // Changed from 5000 to 5001
 // Security middleware
 app.use(helmet());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
-app.use(limiter);
-
-// CORS configuration
+// CORS configuration - moved before rate limiting to handle preflight requests
 app.use(cors({
   origin: [
     'http://localhost:3000',
@@ -40,6 +33,21 @@ app.use(cors({
 
 // Handle preflight requests
 app.options('*', cors());
+
+// Rate limiting - more lenient for development
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: process.env.NODE_ENV === 'production' ? 100 : 10000, // Very high limit for development
+  skip: (req) => {
+    // Skip rate limiting for development environment
+    return process.env.NODE_ENV !== 'production';
+  },
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again later.'
+  }
+});
+app.use(limiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

@@ -51,7 +51,7 @@ export const DATE_FORMATS = {
 
 // Local Storage Keys
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'authToken',
+  AUTH_TOKEN: 'token',
   USER_PREFERENCES: 'userPreferences',
   RECENT_SEARCHES: 'recentSearches'
 };

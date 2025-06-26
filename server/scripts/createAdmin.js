@@ -24,7 +24,7 @@ const createAdmin = async () => {
       firstName: 'Admin',
       lastName: 'User',
       email: 'admin@deeptec.com',
-      password: 'admin123', // This will be hashed automatically by the User model
+      password: 'admin@123', // This will be hashed automatically by the User model
       role: 'Admin',
       department: 'Administration',
       employeeId: 'ADMIN001',
@@ -37,7 +37,7 @@ const createAdmin = async () => {
     console.log('\n🎉 Admin user created successfully!');
     console.log('=' .repeat(50));
     console.log('📧 Email: admin@deeptec.com');
-    console.log('🔑 Password: admin123');
+    console.log('🔑 Password: admin@123');
     console.log('👤 Role: Admin');
     console.log('🏢 Department: Administration');
     console.log('🆔 Employee ID: ADMIN001');

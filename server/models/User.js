@@ -28,8 +28,8 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     required: [true, 'User role is required'],
-    enum: ['admin', 'fleet_manager', 'staff', 'driver'],
-    default: 'staff'
+    enum: ['Admin', 'Manager', 'Driver', 'Mechanic', 'Viewer'],
+    default: 'Viewer'
   },
   permissions: [{
     type: String,
@@ -145,59 +145,68 @@ userSchema.methods.updateLastLogin = function() {
   return this.save();
 };
 
+// Check if user has permission
+userSchema.methods.hasPermission = function(permission) {
+  if (!this.permissions) return false;
+  
+  // Map permission strings to permission object properties
+  const permissionMap = {
+    'vehicles.view': 'canViewVehicles',
+    'vehicles.create': 'canEditVehicles',
+    'vehicles.edit': 'canEditVehicles', 
+    'vehicles.delete': 'canDeleteVehicles',
+    'users.manage': 'canManageUsers',
+    'reports.view': 'canViewReports',
+    'reports.export': 'canViewReports',
+    'maintenance.manage': 'canManageMaintenance'
+  };
+  
+  const permissionKey = permissionMap[permission];
+  return permissionKey ? this.permissions[permissionKey] : false;
+};
+
 // Set permissions based on role
 userSchema.pre('save', function(next) {
   if (this.isModified('role')) {
     switch (this.role) {
       case 'Admin':
-        this.permissions = {
-          canViewVehicles: true,
-          canEditVehicles: true,
-          canDeleteVehicles: true,
-          canManageUsers: true,
-          canViewReports: true,
-          canManageMaintenance: true
-        };
+        this.permissions = [
+          'vehicles.view',
+          'vehicles.create', 
+          'vehicles.edit',
+          'vehicles.delete',
+          'reports.view',
+          'reports.export',
+          'notifications.manage',
+          'users.manage',
+          'system.admin'
+        ];
         break;
       case 'Manager':
-        this.permissions = {
-          canViewVehicles: true,
-          canEditVehicles: true,
-          canDeleteVehicles: false,
-          canManageUsers: false,
-          canViewReports: true,
-          canManageMaintenance: true
-        };
+        this.permissions = [
+          'vehicles.view',
+          'vehicles.create',
+          'vehicles.edit',
+          'reports.view',
+          'reports.export',
+          'notifications.manage'
+        ];
         break;
       case 'Driver':
-        this.permissions = {
-          canViewVehicles: true,
-          canEditVehicles: false,
-          canDeleteVehicles: false,
-          canManageUsers: false,
-          canViewReports: false,
-          canManageMaintenance: false
-        };
+        this.permissions = [
+          'vehicles.view'
+        ];
         break;
       case 'Mechanic':
-        this.permissions = {
-          canViewVehicles: true,
-          canEditVehicles: true,
-          canDeleteVehicles: false,
-          canManageUsers: false,
-          canViewReports: false,
-          canManageMaintenance: true
-        };
+        this.permissions = [
+          'vehicles.view',
+          'vehicles.edit'
+        ];
         break;
       default: // Viewer
-        this.permissions = {
-          canViewVehicles: true,
-          canEditVehicles: false,
-          canDeleteVehicles: false,
-          canManageUsers: false,
-          canViewReports: false,
-          canManageMaintenance: false
-        };
+        this.permissions = [
+          'vehicles.view'
+        ];
     }
   }
   next();
