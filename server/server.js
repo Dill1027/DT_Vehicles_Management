@@ -45,6 +45,21 @@ app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Request logging middleware for debugging
+app.use((req, res, next) => {
+  // Only log requests with Authorization header to avoid spam
+  if (req.headers.authorization) {
+    console.log(`🔍 Request: ${req.method} ${req.url}`, {
+      hasAuth: !!req.headers.authorization,
+      authType: req.headers.authorization?.split(' ')[0],
+      contentType: req.headers['content-type'],
+      userAgent: req.headers['user-agent']?.substring(0, 50) + '...',
+      timestamp: new Date().toISOString()
+    });
+  }
+  next();
+});
+
 // Routes
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/users', userRoutes);

@@ -27,38 +27,79 @@ const authenticate = async (req, res, next) => {
     
     // Handle different token formats
     if (authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      token = authHeader.substring(7).trim(); // Remove 'Bearer ' prefix and trim
     } else {
-      token = authHeader; // Token without Bearer prefix
+      token = authHeader.trim(); // Token without Bearer prefix, trimmed
     }
 
-    // Validate token format
-    if (!token || token.trim() === '' || token === 'null' || token === 'undefined') {
+    // Enhanced token validation
+    if (!token || 
+        token === '' || 
+        token === 'null' || 
+        token === 'undefined' ||
+        token === 'Bearer' ||
+        token.length < 10) { // JWT tokens are typically much longer
+      console.warn('Invalid token format received:', {
+        hasToken: !!token,
+        tokenLength: token ? token.length : 0,
+        tokenPreview: token ? token.substring(0, 10) + '...' : 'none',
+        url: req.url,
+        method: req.method,
+        userAgent: req.get('User-Agent')
+      });
+      
       return res.status(401).json({
         success: false,
         message: 'Access denied. Invalid token format.'
       });
     }
 
-    // Additional validation for token structure
+    // Validate JWT structure (should have 3 parts separated by dots)
     const tokenParts = token.split('.');
     if (tokenParts.length !== 3) {
-      console.error('JWT malformed - invalid token structure:', {
+      console.warn('JWT structure validation failed:', {
         tokenLength: token.length,
         parts: tokenParts.length,
-        token: token.substring(0, 20) + '...' // Log first 20 chars for debugging
+        tokenPreview: token.substring(0, 20) + '...',
+        url: req.url,
+        method: req.method
       });
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. Malformed token.'
-      });
-    }
-
-    // Check if any part is empty
-    if (tokenParts.some(part => !part.trim())) {
+      
       return res.status(401).json({
         success: false,
         message: 'Access denied. Malformed token structure.'
+      });
+    }
+
+    // Check if any part is empty or contains only whitespace
+    if (tokenParts.some(part => !part || !part.trim())) {
+      console.warn('JWT has empty parts:', {
+        partsLength: tokenParts.map(p => p.length),
+        url: req.url,
+        method: req.method
+      });
+      
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. Invalid token structure.'
+      });
+    }
+
+    // Validate base64 encoding of token parts
+    try {
+      // Try to decode header and payload to ensure they're valid base64
+      JSON.parse(Buffer.from(tokenParts[0], 'base64').toString());
+      JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+    } catch (base64Error) {
+      console.warn('JWT base64 validation failed:', {
+        error: base64Error.message,
+        url: req.url,
+        method: req.method
+      });
+      
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. Invalid token encoding.'
       });
     }
 
@@ -66,6 +107,12 @@ const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     if (!decoded.userId) {
+      console.warn('JWT missing userId in payload:', {
+        decodedKeys: Object.keys(decoded),
+        url: req.url,
+        method: req.method
+      });
+      
       return res.status(401).json({
         success: false,
         message: 'Invalid token payload.'
@@ -75,6 +122,12 @@ const authenticate = async (req, res, next) => {
     const user = await User.findById(decoded.userId).select('-password');
     
     if (!user) {
+      console.warn('User not found for token:', {
+        userId: decoded.userId,
+        url: req.url,
+        method: req.method
+      });
+      
       return res.status(401).json({
         success: false,
         message: 'User not found.'
@@ -91,41 +144,51 @@ const authenticate = async (req, res, next) => {
     req.user = decoded;
     req.userDetails = user;
     next();
+
   } catch (error) {
+    // Enhanced error logging with more context
     console.error('Authentication error:', {
       name: error.name,
       message: error.message,
-      tokenPresent: !!req.header('Authorization'),
+      hasAuthHeader: !!req.header('Authorization'),
+      authHeaderLength: req.header('Authorization') ? req.header('Authorization').length : 0,
       jwtSecretPresent: !!process.env.JWT_SECRET,
       url: req.url,
-      method: req.method
+      method: req.method,
+      userAgent: req.get('User-Agent'),
+      timestamp: new Date().toISOString()
     });
 
-    // Handle specific JWT errors
+    // Handle specific JWT errors with detailed responses
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
-        message: 'Invalid token format or signature.'
+        message: 'Invalid token format or signature.',
+        code: 'INVALID_TOKEN'
       });
     }
 
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
-        message: 'Token has expired.'
+        message: 'Token has expired.',
+        code: 'TOKEN_EXPIRED'
       });
     }
 
     if (error.name === 'NotBeforeError') {
       return res.status(401).json({
         success: false,
-        message: 'Token not active yet.'
+        message: 'Token not active yet.',
+        code: 'TOKEN_NOT_ACTIVE'
       });
     }
 
+    // Generic authentication failure
     res.status(401).json({
       success: false,
-      message: 'Authentication failed.'
+      message: 'Authentication failed.',
+      code: 'AUTH_FAILED'
     });
   }
 };
