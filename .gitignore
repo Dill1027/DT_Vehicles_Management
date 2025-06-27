@@ -75,7 +75,8 @@ dist
 
 // Gatsby files
 .cache/
-public
+# public - Don't ignore client/public as it contains necessary React files
+server/public/
 
 // Storybook build outputs
 .out
@@ -102,6 +103,7 @@ Thumbs.db
 *~
 
 // Upload directories
+server/uploads/
 uploads/
 public/uploads/
 
