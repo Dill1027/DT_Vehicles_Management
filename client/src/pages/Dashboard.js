@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { vehicleService } from '../services/vehicleService';
-import notificationService from '../services/notificationService';
 import reportService from '../services/reportService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
