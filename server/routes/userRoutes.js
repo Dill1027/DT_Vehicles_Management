@@ -9,9 +9,13 @@ const {
   getAllUsers,
   getUserById,
   updateUser,
-  deleteUser
+  deleteUser,
+  uploadProfileImage,
+  updatePreferences,
+  getProfileImage
 } = require('../controllers/userController');
 const { authenticate, authorize } = require('../middleware/auth');
+const { upload, handleMulterError } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -81,6 +85,9 @@ router.post('/login', loginValidation, login);
 router.get('/profile', authenticate, getProfile);
 router.put('/profile', authenticate, updateProfileValidation, updateProfile);
 router.put('/change-password', authenticate, changePasswordValidation, changePassword);
+router.put('/preferences', authenticate, updatePreferences);
+router.post('/profile/image', authenticate, upload.single('profileImage'), handleMulterError, uploadProfileImage);
+router.get('/profile-image/:imagePath', getProfileImage); // Route to serve profile images
 
 // Admin/Manager routes
 router.get('/', authenticate, authorize(['Admin', 'Manager']), getAllUsers);

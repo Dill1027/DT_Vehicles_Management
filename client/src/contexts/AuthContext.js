@@ -18,7 +18,8 @@ const AUTH_ACTIONS = {
   LOGIN_FAILURE: 'LOGIN_FAILURE',
   LOGOUT: 'LOGOUT',
   LOAD_USER: 'LOAD_USER',
-  CLEAR_ERROR: 'CLEAR_ERROR'
+  CLEAR_ERROR: 'CLEAR_ERROR',
+  UPDATE_USER: 'UPDATE_USER'
 };
 
 // Reducer
@@ -69,6 +70,11 @@ const authReducer = (state, action) => {
       return {
         ...state,
         error: null
+      };
+    case AUTH_ACTIONS.UPDATE_USER:
+      return {
+        ...state,
+        user: { ...state.user, ...action.payload }
       };
     default:
       return state;
@@ -144,10 +150,43 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
   }, []);
 
+  // Update user function
+  const updateUser = useCallback((userData) => {
+    dispatch({
+      type: AUTH_ACTIONS.UPDATE_USER,
+      payload: userData
+    });
+    
+    // Also update in localStorage if needed
+    try {
+      const currentUser = authService.getCurrentUser();
+      if (currentUser) {
+        const updatedUser = { ...currentUser, ...userData };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    } catch (error) {
+      console.error('Error updating user in localStorage:', error);
+    }
+  }, []);
+
   // Check permissions
   const hasPermission = useCallback((permission) => {
-    return state.user?.permissions?.includes(permission) || false;
-  }, [state.user?.permissions]);
+    if (!state.user) return false;
+    
+    // Admin users have all permissions
+    if (state.user.role === 'admin') return true;
+    
+    // Define role-based permissions
+    const rolePermissions = {
+      admin: ['create_vehicle', 'edit_vehicle', 'delete_vehicle', 'view_vehicle'],
+      manager: ['create_vehicle', 'edit_vehicle', 'view_vehicle'],
+      mechanic: ['edit_vehicle', 'view_vehicle'],
+      user: ['view_vehicle']
+    };
+
+    const userPermissions = rolePermissions[state.user.role] || [];
+    return userPermissions.includes(permission);
+  }, [state.user]);
 
   // Check role
   const hasRole = useCallback((role) => {
@@ -165,10 +204,11 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     clearError,
+    updateUser,
     hasPermission,
     hasRole,
     isAdmin
-  }), [state, login, logout, clearError, hasPermission, hasRole, isAdmin]);
+  }), [state, login, logout, clearError, updateUser, hasPermission, hasRole, isAdmin]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -16,6 +16,7 @@ This document lists all the files that have been created for the DT Vehicles Man
 - `pages/Dashboard.js` - Main dashboard with statistics and overview
 - `pages/VehicleList.js` - Vehicle listing with search and filters
 - `pages/AddVehicle.js` - Form for adding new vehicles
+- `pages/Profile.js` - User profile management page
 
 #### Components
 - `components/Navigation.js` - Main navigation component
@@ -26,6 +27,12 @@ This document lists all the files that have been created for the DT Vehicles Man
 
 #### Services
 - `services/vehicleService.js` - API service functions for vehicle operations
+- `services/userService.js` - API service functions for user operations
+- `services/authService.js` - Authentication service functions
+- `services/api.js` - Base API configuration with interceptors
+
+#### Contexts
+- `contexts/AuthContext.js` - Authentication context and provider
 
 #### Utils
 - `utils/helpers.js` - Utility functions (dates, validation, formatting)
@@ -49,6 +56,7 @@ This document lists all the files that have been created for the DT Vehicles Man
 ```
 DT_Vehicles_Management/
 ├── 📄 README.md
+├── 📄 PROJECT_SUMMARY.md
 ├── 📄 package.json
 ├── 📄 setup.sh
 ├── 📄 .gitignore
@@ -58,7 +66,8 @@ DT_Vehicles_Management/
 │   │   ├── 📁 pages/
 │   │   │   ├── 📄 Dashboard.js
 │   │   │   ├── 📄 VehicleList.js
-│   │   │   └── 📄 AddVehicle.js
+│   │   │   ├── 📄 AddVehicle.js
+│   │   │   └── 📄 Profile.js
 │   │   ├── 📁 components/
 │   │   │   ├── 📄 Navigation.js
 │   │   │   ├── 📄 VehicleCard.js
@@ -66,7 +75,12 @@ DT_Vehicles_Management/
 │   │   │   ├── 📄 LoadingSpinner.js
 │   │   │   └── 📄 ErrorBoundary.js
 │   │   ├── 📁 services/
-│   │   │   └── 📄 vehicleService.js
+│   │   │   ├── 📄 vehicleService.js
+│   │   │   ├── 📄 userService.js
+│   │   │   ├── 📄 authService.js
+│   │   │   └── 📄 api.js
+│   │   ├── 📁 contexts/
+│   │   │   └── 📄 AuthContext.js
 │   │   └── 📁 utils/
 │   │       ├── 📄 helpers.js
 │   │       └── 📄 constants.js
@@ -80,25 +94,58 @@ DT_Vehicles_Management/
     └── 📄 .env.example
 ```
 
-## 🔧 Existing Files (Already Present)
+## 🔧 Service Functions Available
 
-### Client
-- `src/App.js` - Main application component (already configured)
-- `src/index.js` - Application entry point
-- `src/index.css` - Global styles
-- `package.json` - Client dependencies
-- `tailwind.config.js` - Tailwind CSS configuration
-- `public/` - Public assets
+### Authentication Service (`authService.js`)
+- ✅ User login/logout
+- ✅ User registration
+- ✅ Token management
+- ✅ Password reset functionality
+- ✅ Email verification
+- ✅ Token refresh
 
-### Server
-- `server.js` - Main server entry point
-- `package.json` - Server dependencies
-- `.env` - Environment variables (create from .env.example)
-- `controllers/` - Route controllers (vehicleController.js, userController.js, maintenanceController.js)
-- `models/` - Database models (Vehicle.js, User.js, Maintenance.js)
-- `routes/` - API routes (vehicleRoutes.js, userRoutes.js, maintenanceRoutes.js)
-- `middleware/` - Custom middleware (auth.js, upload.js)
-- `utils/` - Utility functions (email.js, helpers.js)
+### User Service (`userService.js`)
+- ✅ Profile management
+- ✅ Profile image upload
+- ✅ Password change
+- ✅ User preferences
+- ✅ User role management (Admin)
+- ✅ User deletion (Admin)
+
+### Vehicle Service (`vehicleService.js`)
+- ✅ CRUD operations for vehicles
+- ✅ Document management
+- ✅ Maintenance tracking
+- ✅ Statistics and reporting
+
+### API Service (`api.js`)
+- ✅ Base HTTP client configuration
+- ✅ Request/response interceptors
+- ✅ Authentication token handling
+- ✅ Error handling
+
+## 🎯 Vehicle Management System Features
+
+### Core Functionality
+- ✅ Vehicle profile management
+- ✅ Document tracking (Insurance, Emission, Revenue License)
+- ✅ Automated expiry notifications (30, 15, 7 days)
+- ✅ Dashboard with upcoming expiries
+- ✅ Role-based access control
+- ✅ PDF report exports
+- ✅ Service history tracking
+- ✅ Tyre/battery replacement records
+
+### User Roles
+- **Admin**: Full system access, user management
+- **Staff**: View and update specific vehicle fields
+- **Manager**: Department-level vehicle management
+
+### Notification System
+- 📧 Email notifications
+- 📱 SMS alerts
+- 🔔 In-app notifications
+- ⏰ Configurable reminder schedules
 
 ## 🚀 Quick Start Commands
 
@@ -124,46 +171,11 @@ DT_Vehicles_Management/
 Edit `server/.env`:
 - `MONGODB_URI` - Your MongoDB connection string
 - `JWT_SECRET` - Your JWT secret key
-- Other optional configurations
+- `EMAIL_SERVICE` - Email service configuration
+- `SMS_SERVICE` - SMS service configuration
 
 ### Client Environment Variables
 Edit `client/.env`:
 - `REACT_APP_API_URL` - Backend API URL (default: http://localhost:5000/api)
 
-## 📝 Key Features Implemented
-
-### Frontend Features
-- ✅ Dashboard with statistics
-- ✅ Vehicle listing with search/filter
-- ✅ Add/Edit vehicle forms
-- ✅ Responsive design with Tailwind CSS
-- ✅ Navigation component
-- ✅ Loading states and error handling
-- ✅ Modal components
-- ✅ API service layer
-
-### Backend Features
-- ✅ Database utilities and connection
-- ✅ Authentication middleware
-- ✅ File upload handling
-- ✅ Error handling utilities
-- ✅ Input validation and sanitization
-- ✅ Rate limiting
-- ✅ Security middleware
-
-### System Features
-- ✅ Environment configuration
-- ✅ Setup automation
-- ✅ Git configuration
-- ✅ Documentation
-- ✅ Development scripts
-
-## 🎯 Next Steps
-
-1. Configure your database connection
-2. Run the setup script
-3. Start developing additional features
-4. Add tests
-5. Deploy to production
-
-The project structure is now complete and ready for development! 🎉
+The project structure is now complete with all necessary services for the Deep Tec Engineering Vehicle Management System! 🚗✨

@@ -5,9 +5,11 @@ const {
   login,
   getProfile,
   updateProfile,
-  changePassword
+  changePassword,
+  uploadProfileImage
 } = require('../controllers/userController');
 const { authenticate } = require('../middleware/auth');
+const { upload, handleMulterError } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -50,5 +52,6 @@ router.post('/login', loginValidation, login);
 router.get('/profile', authenticate, getProfile);
 router.put('/profile', authenticate, updateProfile);
 router.put('/change-password', authenticate, changePasswordValidation, changePassword);
+router.post('/profile/image', authenticate, upload.single('profileImage'), handleMulterError, uploadProfileImage);
 
 module.exports = router;

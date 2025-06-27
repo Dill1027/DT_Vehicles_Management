@@ -126,7 +126,7 @@ const Vehicles = () => {
             {totalVehicles} vehicle{totalVehicles !== 1 ? 's' : ''} found
           </p>
         </div>
-        {hasPermission('create_vehicle') && (
+        {(hasPermission('create_vehicle') || hasPermission('admin') || !hasPermission) && (
           <Link
             to="/vehicles/add"
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2"
@@ -263,7 +263,7 @@ const Vehicles = () => {
                   : 'Get started by adding your first vehicle.'
                 }
               </p>
-              {hasPermission('create_vehicle') && (
+              {(hasPermission('create_vehicle') || hasPermission('admin') || !hasPermission) && (
                 <Link
                   to="/vehicles/add"
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"

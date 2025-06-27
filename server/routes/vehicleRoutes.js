@@ -20,6 +20,120 @@ router.get('/', authenticate, authorize('vehicles.view'), async (req, res) => {
   }
 });
 
+// Get vehicle statistics (move this before /:id route)
+router.get('/stats', authenticate, authorize('vehicles.view'), async (req, res) => {
+  try {
+    const total = await Vehicle.countDocuments();
+    const statusStats = await Vehicle.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]);
+    
+    const typeStats = await Vehicle.aggregate([
+      { $group: { _id: '$type', count: { $sum: 1 } } }
+    ]);
+    
+    // Count vehicles with upcoming expiries (within 30 days)
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    
+    const upcomingInsuranceExpiry = await Vehicle.countDocuments({
+      insuranceExpiry: { $lte: thirtyDaysFromNow, $gte: new Date() }
+    });
+    
+    const upcomingEmissionExpiry = await Vehicle.countDocuments({
+      emissionExpiry: { $lte: thirtyDaysFromNow, $gte: new Date() }
+    });
+    
+    const upcomingRevenueExpiry = await Vehicle.countDocuments({
+      revenueExpiry: { $lte: thirtyDaysFromNow, $gte: new Date() }
+    });
+
+    // Calculate status counts
+    const available = statusStats.find(s => s._id === 'available')?.count || 0;
+    const inUse = statusStats.find(s => s._id === 'in-use')?.count || 0;
+    const maintenance = statusStats.find(s => s._id === 'maintenance')?.count || 0;
+
+    res.json({
+      success: true,
+      data: {
+        total,
+        available,
+        inUse,
+        maintenance,
+        statusStats,
+        typeStats,
+        upcomingExpirations: {
+          insurance: upcomingInsuranceExpiry,
+          emission: upcomingEmissionExpiry,
+          revenue: upcomingRevenueExpiry
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching vehicle stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching vehicle statistics'
+    });
+  }
+});
+
+// Add missing expiring vehicles endpoint
+router.get('/expiring', authenticate, authorize('vehicles.view'), async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const vehicles = await Vehicle.getExpiringVehicles(days);
+    
+    const vehiclesWithAlerts = vehicles.map(vehicle => ({
+      ...vehicle.toObject(),
+      alerts: vehicle.getExpiryAlerts(),
+      nearestExpiryDays: Math.min(
+        ...vehicle.getExpiryAlerts().map(alert => alert.daysUntilExpiry)
+      ),
+      expiringDocuments: vehicle.getExpiryAlerts().filter(alert => alert.daysUntilExpiry > 0)
+    }));
+
+    res.json({
+      success: true,
+      data: vehiclesWithAlerts,
+      count: vehiclesWithAlerts.length,
+      message: `Found ${vehiclesWithAlerts.length} vehicles with documents expiring in ${days} days`
+    });
+  } catch (error) {
+    console.error('Error fetching expiring vehicles:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching expiring vehicles'
+    });
+  }
+});
+
+// Add missing expired vehicles endpoint
+router.get('/expired', authenticate, authorize('vehicles.view'), async (req, res) => {
+  try {
+    const vehicles = await Vehicle.getExpiredVehicles();
+    
+    const vehiclesWithAlerts = vehicles.map(vehicle => ({
+      ...vehicle.toObject(),
+      alerts: vehicle.getExpiryAlerts().filter(alert => alert.priority === 'expired'),
+      expiredDocuments: vehicle.getExpiryAlerts().filter(alert => alert.priority === 'expired')
+    }));
+
+    res.json({
+      success: true,
+      data: vehiclesWithAlerts,
+      count: vehiclesWithAlerts.length,
+      message: `Found ${vehiclesWithAlerts.length} vehicles with expired documents`
+    });
+  } catch (error) {
+    console.error('Error fetching expired vehicles:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching expired vehicles'
+    });
+  }
+});
+
 // Get vehicle by ID (requires authentication and vehicles.view permission)
 router.get('/:id', authenticate, authorize('vehicles.view'), async (req, res) => {
   try {
@@ -69,8 +183,8 @@ router.post('/', authenticate, authorize('vehicles.create'), async (req, res) =>
   }
 });
 
-// Update vehicle
-router.put('/:id', async (req, res) => {
+// Update vehicle (add missing authentication)
+router.put('/:id', authenticate, authorize('vehicles.update'), async (req, res) => {
   try {
     const updated = await Vehicle.findByIdAndUpdate(
       req.params.id, 
@@ -104,8 +218,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete vehicle
-router.delete('/:id', async (req, res) => {
+// Delete vehicle (add missing authentication)
+router.delete('/:id', authenticate, authorize('vehicles.delete'), async (req, res) => {
   try {
     const deleted = await Vehicle.findByIdAndDelete(req.params.id);
     if (!deleted) {
@@ -123,102 +237,6 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error deleting vehicle'
-    });
-  }
-});
-
-// Get vehicle statistics
-router.get('/stats/overview', async (req, res) => {
-  try {
-    const total = await Vehicle.countDocuments();
-    const typeStats = await Vehicle.aggregate([
-      { $group: { _id: '$type', count: { $sum: 1 } } }
-    ]);
-    
-    // Count vehicles with upcoming expiries (within 30 days)
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    
-    const upcomingInsuranceExpiry = await Vehicle.countDocuments({
-      insuranceExpiry: { $lte: thirtyDaysFromNow, $gte: new Date() }
-    });
-    
-    const upcomingEmissionExpiry = await Vehicle.countDocuments({
-      emissionExpiry: { $lte: thirtyDaysFromNow, $gte: new Date() }
-    });
-    
-    const upcomingRevenueExpiry = await Vehicle.countDocuments({
-      revenueExpiry: { $lte: thirtyDaysFromNow, $gte: new Date() }
-    });
-
-    res.json({
-      success: true,
-      data: {
-        total,
-        typeStats,
-        upcomingExpirations: {
-          insurance: upcomingInsuranceExpiry,
-          emission: upcomingEmissionExpiry,
-          revenue: upcomingRevenueExpiry
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching vehicle stats:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching vehicle statistics'
-    });
-  }
-});
-
-// Get vehicles with expiring documents (requires authentication and reports view permission)
-router.get('/alerts/expiring', authenticate, canViewReports, async (req, res) => {
-  try {
-    const days = parseInt(req.query.days) || 30;
-    const vehicles = await Vehicle.getExpiringVehicles(days);
-    
-    const vehiclesWithAlerts = vehicles.map(vehicle => ({
-      ...vehicle.toObject(),
-      alerts: vehicle.getExpiryAlerts()
-    }));
-
-    res.json({
-      success: true,
-      data: vehiclesWithAlerts,
-      count: vehiclesWithAlerts.length,
-      message: `Found ${vehiclesWithAlerts.length} vehicles with documents expiring in ${days} days`
-    });
-  } catch (error) {
-    console.error('Error fetching expiring vehicles:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching expiring vehicles'
-    });
-  }
-});
-
-// Get expired vehicles (requires authentication and reports view permission)
-router.get('/alerts/expired', authenticate, canViewReports, async (req, res) => {
-  try {
-    const vehicles = await Vehicle.getExpiredVehicles();
-    
-    const vehiclesWithAlerts = vehicles.map(vehicle => ({
-      ...vehicle.toObject(),
-      alerts: vehicle.getExpiryAlerts().filter(alert => alert.priority === 'expired')
-    }));
-
-    res.json({
-      success: true,
-      data: vehiclesWithAlerts,
-      count: vehiclesWithAlerts.length,
-      message: `Found ${vehiclesWithAlerts.length} vehicles with expired documents`
-    });
-  } catch (error) {
-    console.error('Error fetching expired vehicles:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching expired vehicles'
     });
   }
 });

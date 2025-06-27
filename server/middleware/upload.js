@@ -2,121 +2,83 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure upload directories exist
-const createUploadDirs = () => {
-  const dirs = [
-    './uploads',
-    './uploads/vehicles',
-    './uploads/maintenance',
-    './uploads/users',
-    './uploads/documents'
-  ];
-
-  dirs.forEach(dir => {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  });
+// Ensure directories exist
+const ensureDirectoryExists = (dirPath) => {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
 };
 
-createUploadDirs();
-
-// Storage configuration
+// Set up storage for profile images
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    let uploadPath = './uploads/';
-    
-    // Determine upload path based on route
-    if (req.originalUrl.includes('/vehicles')) {
-      uploadPath += 'vehicles/';
-    } else if (req.originalUrl.includes('/maintenance')) {
-      uploadPath += 'maintenance/';
-    } else if (req.originalUrl.includes('/users')) {
-      uploadPath += 'users/';
-    } else {
-      uploadPath += 'documents/';
-    }
-    
+  destination: function (req, file, cb) {
+    const uploadPath = path.join(__dirname, '../uploads/users');
+    ensureDirectoryExists(uploadPath);
     cb(null, uploadPath);
   },
-  filename: (req, file, cb) => {
-    // Generate unique filename
+  filename: function (req, file, cb) {
+    // Create unique filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
-    cb(null, `${name}-${uniqueSuffix}${ext}`);
+    const extension = path.extname(file.originalname);
+    const baseName = path.basename(file.originalname, extension)
+      .replace(/\s+/g, '_')  // Replace spaces with underscores
+      .replace(/[^\w-]/g, ''); // Remove any non-alphanumeric characters except dashes
+    
+    cb(null, `${baseName}-${uniqueSuffix}${extension}`);
   }
 });
 
-// File filter
+// Filter for image files only
 const fileFilter = (req, file, cb) => {
-  // Allowed file types
-  const allowedTypes = {
-    images: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
-    documents: [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain',
-      'text/csv'
-    ]
-  };
-
-  const allAllowedTypes = [...allowedTypes.images, ...allowedTypes.documents];
-
-  if (allAllowedTypes.includes(file.mimetype)) {
+  if (file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only images and documents are allowed.'), false);
+    cb(new Error('Only image files are allowed'), false);
   }
 };
 
-// Configure multer
+// Create multer upload instance
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-    files: 10 // Maximum 10 files per request
-  }
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
 // Error handling middleware for multer
-const handleMulterError = (error, req, res, next) => {
-  if (error instanceof multer.MulterError) {
-    if (error.code === 'LIMIT_FILE_SIZE') {
+const handleMulterError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        message: 'File size too large. Maximum size is 10MB.'
+        message: 'File size too large. Maximum size is 5MB.'
       });
     }
-    if (error.code === 'LIMIT_FILE_COUNT') {
+    if (err.code === 'LIMIT_FILE_COUNT') {
       return res.status(400).json({
         success: false,
         message: 'Too many files. Maximum 10 files allowed.'
       });
     }
-    if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
       return res.status(400).json({
         success: false,
         message: 'Unexpected file field.'
       });
     }
-  }
-
-  if (error.message === 'Invalid file type. Only images and documents are allowed.') {
     return res.status(400).json({
       success: false,
-      message: error.message
+      message: `Upload error: ${err.message}`
+    });
+  } else if (err) {
+    return res.status(400).json({
+      success: false,
+      message: err.message || 'File upload failed'
     });
   }
-
-  next(error);
+  next();
 };
 
-// Helper function to delete files
+// Function to delete a file
 const deleteFile = (filePath) => {
   try {
     if (fs.existsSync(filePath)) {
@@ -130,15 +92,16 @@ const deleteFile = (filePath) => {
   }
 };
 
-// Helper function to get file URL
-const getFileUrl = (req, filePath) => {
+// Function to get absolute URL for a file
+const getFileUrl = (req, relativePath) => {
   const baseUrl = `${req.protocol}://${req.get('host')}`;
-  return `${baseUrl}/${filePath.replace('./uploads/', 'uploads/')}`;
+  return `${baseUrl}/${relativePath.replace('./uploads/', 'uploads/')}`;
 };
 
 module.exports = {
   upload,
   handleMulterError,
   deleteFile,
-  getFileUrl
+  getFileUrl,
+  ensureDirectoryExists
 };

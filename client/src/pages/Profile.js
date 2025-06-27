@@ -1,27 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { userService } from '../services/userService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { 
   UserIcon,
   PencilIcon,
   KeyIcon,
   BellIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  CameraIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   
   const [profileData, setProfileData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     department: '',
-    phone: '',
+    phoneNumber: '',
     role: ''
   });
 
@@ -45,24 +49,114 @@ const Profile = () => {
         lastName: user.lastName || '',
         email: user.email || '',
         department: user.department || '',
-        phone: user.phone || '',
+        phoneNumber: user.phoneNumber || '',
         role: user.role || ''
       });
     }
   }, [user]);
 
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // Helper to get absolute profile image URL
+  const getProfileImageUrl = (profileImage) => {
+    if (!profileImage) return '';
+    // If already absolute, return as is
+    if (profileImage.startsWith('http')) return profileImage;
+    // Always use backend API base URL
+    const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+    // Remove any /api prefix from the image path
+    const cleanPath = profileImage.replace(/^\/api/, '');
+    // Remove duplicate slashes
+    return apiBase.replace(/\/api$/, '') + cleanPath;
+  };
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    setImageUploading(true);
 
     try {
-      // Note: Actual implementation would call userService.updateProfile(profileData)
-      console.log('Updating profile:', profileData);
-      toast.success('Profile updated successfully');
-      setIsEditing(false);
+      const response = await userService.uploadProfileImage(file);
+      
+      if (response.success) {
+        toast.success('Profile image updated successfully');
+        
+        // Extract the correct user data
+        const userData = response.data?.user || response.data;
+        
+        // Update user context with new image
+        updateUser(userData);
+      } else {
+        toast.error(response.message || 'Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error(error.response?.data?.message || 'Failed to upload image');
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    
+    // Client-side validation
+    if (!profileData.firstName.trim()) {
+      toast.error('First name cannot be empty');
+      return;
+    }
+    
+    if (!profileData.lastName.trim()) {
+      toast.error('Last name cannot be empty');
+      return;
+    }
+    
+    if (!profileData.department.trim()) {
+      toast.error('Department cannot be empty');
+      return;
+    }
+    
+    // Phone number validation with regex
+    if (profileData.phoneNumber && 
+        !/^\+?[\d\s-()]+$/.test(profileData.phoneNumber)) {
+      toast.error('Please enter a valid phone number');
+      return;
+    }
+    
+    setLoading(true);
+
+    // Only send fields that are allowed to be updated by the user
+    const updatableFields = {
+      firstName: profileData.firstName.trim(),
+      lastName: profileData.lastName.trim(),
+      phoneNumber: profileData.phoneNumber?.trim() || '',
+      department: profileData.department.trim()
+    };
+
+    try {
+      const response = await userService.updateProfile(updatableFields);
+
+      if (response.success) {
+        toast.success('Profile updated successfully');
+        updateUser(response.data);
+        setIsEditing(false);
+      } else {
+        toast.error(response.message || 'Failed to update profile');
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -84,18 +178,25 @@ const Profile = () => {
     setLoading(true);
 
     try {
-      // Note: Actual implementation would call userService.changePassword(passwordData)
-      console.log('Changing password');
-      toast.success('Password changed successfully');
-      setShowPasswordForm(false);
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
+      const response = await userService.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
       });
+
+      if (response.success) {
+        toast.success('Password changed successfully');
+        setShowPasswordForm(false);
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      } else {
+        toast.error(response.message || 'Failed to change password');
+      }
     } catch (error) {
       console.error('Error changing password:', error);
-      toast.error('Failed to change password');
+      toast.error(error.response?.data?.message || 'Failed to change password');
     } finally {
       setLoading(false);
     }
@@ -105,12 +206,16 @@ const Profile = () => {
     setLoading(true);
 
     try {
-      // Note: Actual implementation would call userService.updatePreferences(preferences)
-      console.log('Updating preferences:', preferences);
-      toast.success('Preferences updated successfully');
+      const response = await userService.updatePreferences(preferences);
+      
+      if (response.success) {
+        toast.success('Preferences updated successfully');
+      } else {
+        toast.error(response.message || 'Failed to update preferences');
+      }
     } catch (error) {
       console.error('Error updating preferences:', error);
-      toast.error('Failed to update preferences');
+      toast.error(error.response?.data?.message || 'Failed to update preferences');
     } finally {
       setLoading(false);
     }
@@ -152,8 +257,47 @@ const Profile = () => {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="text-center">
-              <div className="mx-auto h-24 w-24 rounded-full bg-gray-300 flex items-center justify-center mb-4">
-                <UserIcon className="h-12 w-12 text-gray-500" />
+              <div className="relative mx-auto h-24 w-24 rounded-full bg-gray-300 overflow-hidden mb-4">
+                {user.profileImage ? (
+                  <img
+                    src={getProfileImageUrl(user.profileImage)}
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      console.error('Image load error, URL:', e.target.src);
+                      e.target.onerror = null;
+                      // Always fallback to /uploads/users/ without /api
+                      if (!e.target.src.includes('fallback=true')) {
+                        const baseUrl = window.location.origin;
+                        const imagePath = user.profileImage.split('/').pop();
+                        e.target.src = `${baseUrl}/uploads/users/${imagePath}?fallback=true`;
+                        return;
+                      }
+                      // Final fallback to SVG placeholder
+                      e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'%3E%3C/path%3E%3Ccircle cx='12' cy='7' r='4'%3E%3C/circle%3E%3C/svg%3E";
+                    }}
+                  />
+                ) : (
+                  <UserIcon className="h-12 w-12 text-gray-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                )}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={imageUploading}
+                  className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center shadow-lg disabled:opacity-50"
+                >
+                  {imageUploading ? (
+                    <LoadingSpinner size="xs" />
+                  ) : (
+                    <CameraIcon className="h-4 w-4" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
               </div>
               <h2 className="text-xl font-semibold text-gray-900">
                 {user.firstName} {user.lastName}
@@ -258,14 +402,14 @@ const Profile = () => {
                     />
                   </div>
                   <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone
+                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number
                     </label>
                     <input
-                      id="phone"
+                      id="phoneNumber"
                       type="tel"
-                      value={profileData.phone}
-                      onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                      value={profileData.phoneNumber}
+                      onChange={(e) => setProfileData({ ...profileData, phoneNumber: e.target.value })}
                       disabled={!isEditing}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50"
                     />
@@ -277,9 +421,10 @@ const Profile = () => {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
                     >
-                      {loading ? <LoadingSpinner size="sm" /> : 'Save Changes'}
+                      {loading ? <LoadingSpinner size="sm" /> : null}
+                      Save Changes
                     </button>
                     <button
                       type="button"

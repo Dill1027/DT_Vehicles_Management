@@ -147,22 +147,10 @@ userSchema.methods.updateLastLogin = function() {
 
 // Check if user has permission
 userSchema.methods.hasPermission = function(permission) {
-  if (!this.permissions) return false;
+  if (!this.permissions || !Array.isArray(this.permissions)) return false;
   
-  // Map permission strings to permission object properties
-  const permissionMap = {
-    'vehicles.view': 'canViewVehicles',
-    'vehicles.create': 'canEditVehicles',
-    'vehicles.edit': 'canEditVehicles', 
-    'vehicles.delete': 'canDeleteVehicles',
-    'users.manage': 'canManageUsers',
-    'reports.view': 'canViewReports',
-    'reports.export': 'canViewReports',
-    'maintenance.manage': 'canManageMaintenance'
-  };
-  
-  const permissionKey = permissionMap[permission];
-  return permissionKey ? this.permissions[permissionKey] : false;
+  // Check if the user has the exact permission
+  return this.permissions.includes(permission);
 };
 
 // Set permissions based on role

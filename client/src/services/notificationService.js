@@ -1,6 +1,6 @@
 import api from './api';
 
-export const notificationService = {
+const notificationService = {
   // Get expiring vehicles
   getExpiringVehicles: async (days = 30) => {
     try {
@@ -66,6 +66,39 @@ export const notificationService = {
       return response.data;
     } catch (error) {
       console.error('Error updating notification preferences:', error);
+      throw error;
+    }
+  },
+
+  // Trigger manual notification check
+  triggerManualNotificationCheck: async (days = 30) => {
+    try {
+      const response = await api.post('/vehicles/notifications/trigger', { days });
+      return response.data;
+    } catch (error) {
+      console.error('Error triggering manual notification check:', error);
+      throw error;
+    }
+  },
+
+  // Send weekly summary report
+  sendWeeklySummaryReport: async () => {
+    try {
+      const response = await api.post('/vehicles/reports/weekly');
+      return response.data;
+    } catch (error) {
+      console.error('Error sending weekly summary report:', error);
+      throw error;
+    }
+  },
+
+  // Send monthly summary report
+  sendMonthlySummaryReport: async () => {
+    try {
+      const response = await api.post('/vehicles/reports/monthly');
+      return response.data;
+    } catch (error) {
+      console.error('Error sending monthly summary report:', error);
       throw error;
     }
   }

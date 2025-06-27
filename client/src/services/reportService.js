@@ -1,31 +1,22 @@
 import api from './api';
 
-export const reportService = {
+const reportService = {
   // Download vehicle summary report
-  downloadVehicleSummaryReport: async (filters = {}) => {
+  downloadVehicleSummaryReport: async () => {
     try {
-      const queryParams = new URLSearchParams();
-      Object.keys(filters).forEach(key => {
-        if (filters[key] && filters[key] !== '') {
-          queryParams.append(key, filters[key]);
-        }
-      });
-
-      const response = await api.get(`/vehicles/reports/summary?${queryParams.toString()}`, {
+      const response = await api.get('/vehicles/reports/pdf/summary', {
         responseType: 'blob'
       });
       
-      // Create blob link to download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `vehicle-summary-${new Date().toISOString().split('T')[0]}.pdf`);
-      document.body.appendChild(link);
+      link.download = `vehicle-summary-${new Date().toISOString().split('T')[0]}.pdf`;
       link.click();
-      link.remove();
       window.URL.revokeObjectURL(url);
       
-      return response.data;
+      return { success: true };
     } catch (error) {
       console.error('Error downloading vehicle summary report:', error);
       throw error;
@@ -35,20 +26,19 @@ export const reportService = {
   // Download expiry alerts report
   downloadExpiryAlertsReport: async (days = 30) => {
     try {
-      const response = await api.get(`/vehicles/reports/expiry-alerts?days=${days}`, {
+      const response = await api.get(`/vehicles/reports/pdf/expiry-alerts?days=${days}`, {
         responseType: 'blob'
       });
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `expiry-alerts-${days}days-${new Date().toISOString().split('T')[0]}.pdf`);
-      document.body.appendChild(link);
+      link.download = `expiry-alerts-${new Date().toISOString().split('T')[0]}.pdf`;
       link.click();
-      link.remove();
       window.URL.revokeObjectURL(url);
       
-      return response.data;
+      return { success: true };
     } catch (error) {
       console.error('Error downloading expiry alerts report:', error);
       throw error;
@@ -56,22 +46,21 @@ export const reportService = {
   },
 
   // Download maintenance report
-  downloadMaintenanceReport: async (vehicleId) => {
+  downloadMaintenanceReport: async () => {
     try {
-      const response = await api.get(`/vehicles/${vehicleId}/reports/maintenance`, {
+      const response = await api.get('/vehicles/reports/pdf/maintenance', {
         responseType: 'blob'
       });
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `maintenance-report-${vehicleId}-${new Date().toISOString().split('T')[0]}.pdf`);
-      document.body.appendChild(link);
+      link.download = `maintenance-report-${new Date().toISOString().split('T')[0]}.pdf`;
       link.click();
-      link.remove();
       window.URL.revokeObjectURL(url);
       
-      return response.data;
+      return { success: true };
     } catch (error) {
       console.error('Error downloading maintenance report:', error);
       throw error;
@@ -105,7 +94,7 @@ export const reportService = {
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      return response.data;
+      return { success: true };
     } catch (error) {
       console.error('Error generating custom report:', error);
       throw error;

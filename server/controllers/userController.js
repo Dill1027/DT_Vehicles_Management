@@ -1,6 +1,9 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
+const { deleteFile, getFileUrl } = require('../middleware/upload');
+const path = require('path');
+const fs = require('fs');
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -247,6 +250,105 @@ const changePassword = async (req, res) => {
   }
 };
 
+// Upload profile image
+const uploadProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided'
+      });
+    }
+
+    // Find the user and delete old profile image if exists
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (user.profileImage) {
+      try {
+        // Extract filename from the URL
+        const oldFilename = user.profileImage.split('/').pop();
+        if (oldFilename) {
+          const oldFilePath = path.join(__dirname, '../uploads/users', oldFilename);
+          if (fs.existsSync(oldFilePath)) {
+            deleteFile(oldFilePath);
+          }
+        }
+      } catch (err) {
+        console.error('Error deleting old profile image:', err);
+      }
+    }
+    
+    // Always use /uploads/users/ as the image path (no /api prefix)
+    const imageUrl = `/uploads/users/${req.file.filename}`;
+
+    // Update user with new profile image path
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.userId,
+      { profileImage: imageUrl },
+      { new: true }
+    ).select('-password');
+
+    res.json({
+      success: true,
+      message: 'Profile image uploaded successfully',
+      data: updatedUser
+    });
+  } catch (error) {
+    console.error('Upload profile image error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error uploading profile image',
+      error: error.message
+    });
+  }
+};
+
+// Update user preferences
+const updatePreferences = async (req, res) => {
+  try {
+    const { emailNotifications, smsNotifications, darkMode, language } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { 
+        preferences: {
+          emailNotifications,
+          smsNotifications,
+          darkMode,
+          language
+        }
+      },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Preferences updated successfully',
+      data: user
+    });
+  } catch (error) {
+    console.error('Update preferences error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating preferences',
+      error: error.message
+    });
+  }
+};
+
 // Get all users (Admin only)
 const getAllUsers = async (req, res) => {
   try {
@@ -400,6 +502,32 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// Get profile image - serves as a proxy to bypass CORS issues
+const getProfileImage = async (req, res) => {
+  try {
+    const imagePath = req.params.imagePath;
+    const fullPath = path.join(__dirname, '../uploads/users/', imagePath);
+    
+    // Check if file exists
+    if (fs.existsSync(fullPath)) {
+      // Set CORS headers explicitly
+      res.setHeader('Access-Control-Allow-Origin', process.env.CLIENT_URL || 'http://localhost:3000');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      
+      // Send the file with appropriate content type
+      return res.sendFile(fullPath);
+    }
+    
+    return res.status(404).send('Image not found');
+  } catch (error) {
+    console.error('Error serving profile image:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error serving profile image'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -409,5 +537,8 @@ module.exports = {
   getAllUsers,
   getUserById,
   updateUser,
-  deleteUser
+  deleteUser,
+  uploadProfileImage,
+  updatePreferences,
+  getProfileImage,
 };

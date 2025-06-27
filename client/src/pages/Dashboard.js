@@ -47,16 +47,32 @@ const Dashboard = () => {
       ] = await Promise.all([
         vehicleService.getAllVehicles({ limit: 10 }),
         vehicleService.getVehicleStats(),
-        notificationService.getExpiringVehicles(30),
-        notificationService.getExpiredVehicles()
+        vehicleService.getExpiringVehicles(30),
+        vehicleService.getExpiredVehicles()
       ]);
 
-      setVehicles(vehiclesResponse.data || []);
+      // Fix for vehicles.slice is not a function error
+      // Make sure we're getting an array of vehicles
+      const vehiclesArray = Array.isArray(vehiclesResponse.data) 
+        ? vehiclesResponse.data 
+        : Array.isArray(vehiclesResponse.data?.data)
+          ? vehiclesResponse.data.data
+          : Array.isArray(vehiclesResponse.data?.vehicles)
+            ? vehiclesResponse.data.vehicles
+            : [];
+            
+      setVehicles(vehiclesArray);
+      
+      const statsData = statsResponse.data || {};
       setStats({
-        ...statsResponse.data,
+        total: statsData.total || 0,
+        available: statsData.available || 0,
+        inUse: statsData.inUse || 0,
+        maintenance: statsData.maintenance || 0,
         expiringSoon: expiringResponse.data?.length || 0,
         expired: expiredResponse.data?.length || 0
       });
+      
       setExpiringVehicles(expiringResponse.data || []);
       setExpiredVehicles(expiredResponse.data || []);
 
@@ -283,28 +299,36 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {vehicles.slice(0, 5).map((vehicle) => (
-                  <tr key={vehicle._id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {vehicle.vehicleNumber}
+                {Array.isArray(vehicles) && vehicles.length > 0 ? (
+                  vehicles.slice(0, 5).map((vehicle, index) => (
+                    <tr key={vehicle._id || index}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {vehicle.vehicleNumber}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {vehicle.make} {vehicle.model}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {vehicle.make} {vehicle.model}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {vehicle.department}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(vehicle.status)}`}>
-                        {vehicle.status}
-                      </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {vehicle.department}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(vehicle.status)}`}>
+                          {vehicle.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" className="px-6 py-4 text-center text-gray-500">
+                      No vehicles found
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
