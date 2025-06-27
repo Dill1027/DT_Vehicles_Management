@@ -149,7 +149,13 @@ const Profile = () => {
 
       if (response.success) {
         toast.success('Profile updated successfully');
-        updateUser(response.data);
+        // Always fetch the latest user data from backend
+        const fresh = await userService.getProfile();
+        if (fresh.success) {
+          updateUser(fresh.data.data || fresh.data);
+        } else {
+          updateUser(response.data);
+        }
         setIsEditing(false);
       } else {
         toast.error(response.message || 'Failed to update profile');
@@ -266,15 +272,9 @@ const Profile = () => {
                     onError={(e) => {
                       console.error('Image load error, URL:', e.target.src);
                       e.target.onerror = null;
-                      // Always fallback to /uploads/users/ without /api
-                      if (!e.target.src.includes('fallback=true')) {
-                        const baseUrl = window.location.origin;
-                        const imagePath = user.profileImage.split('/').pop();
-                        e.target.src = `${baseUrl}/uploads/users/${imagePath}?fallback=true`;
-                        return;
-                      }
-                      // Final fallback to SVG placeholder
-                      e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'%3E%3C/path%3E%3Ccircle cx='12' cy='7' r='4'%3E%3C/circle%3E%3C/svg%3E";
+                      // Always fallback to backend uploads path
+                      const imagePath = user.profileImage.split('/').pop();
+                      e.target.src = `http://localhost:5001/uploads/users/${imagePath}`;
                     }}
                   />
                 ) : (
@@ -542,6 +542,7 @@ const Profile = () => {
                     <p className="text-xs text-gray-500">Receive email notifications for important updates</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
+                    <span className="sr-only">Toggle email notifications</span>
                     <input
                       type="checkbox"
                       checked={preferences.emailNotifications}
@@ -558,6 +559,7 @@ const Profile = () => {
                     <p className="text-xs text-gray-500">Receive SMS notifications for urgent alerts</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
+                    <span className="sr-only">Toggle SMS notifications</span>
                     <input
                       type="checkbox"
                       checked={preferences.smsNotifications}

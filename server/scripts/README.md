@@ -68,7 +68,7 @@ npm run create-admin-api
 
 ### Admin User (All Scripts)
 - **Email:** `admin@deeptec.com`
-- **Password:** `admin@123`
+- **Password:** `admin123`
 - **Role:** `Admin`
 - **Department:** `Administration`
 - **Employee ID:** `ADMIN001`
@@ -76,7 +76,7 @@ npm run create-admin-api
 ### Additional Users (seedDatabase.js only)
 | Role     | Email                | Password    | Employee ID |
 |----------|---------------------|-------------|-------------|
-| Admin    | admin@deeptec.com   | admin@123    | ADMIN001    |
+| Admin    | admin@deeptec.com   | admin123    | ADMIN001    |
 | Manager  | manager@deeptec.com | manager123  | MGR001      |
 | Driver   | driver@deeptec.com  | driver123   | DRV001      |
 | Mechanic | mechanic@deeptec.com| mechanic123 | MECH001     |

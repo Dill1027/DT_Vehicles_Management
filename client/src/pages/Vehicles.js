@@ -126,15 +126,13 @@ const Vehicles = () => {
             {totalVehicles} vehicle{totalVehicles !== 1 ? 's' : ''} found
           </p>
         </div>
-        {(hasPermission('create_vehicle') || hasPermission('admin') || !hasPermission) && (
-          <Link
-            to="/vehicles/add"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2"
-          >
-            <PlusIcon className="h-5 w-5" />
-            Add New Vehicle
-          </Link>
-        )}
+        <Link
+          to="/vehicles/add"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2"
+        >
+          <PlusIcon className="h-5 w-5" />
+          Add New Vehicle
+        </Link>
       </div>
 
       {/* Search and Filters */}

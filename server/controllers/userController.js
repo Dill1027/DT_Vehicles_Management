@@ -284,7 +284,7 @@ const uploadProfileImage = async (req, res) => {
       }
     }
     
-    // Always use /uploads/users/ as the image path (no /api prefix)
+    // Create relative URL path for the image - without /api prefix
     const imageUrl = `/uploads/users/${req.file.filename}`;
 
     // Update user with new profile image path

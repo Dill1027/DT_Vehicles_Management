@@ -204,7 +204,7 @@ const Dashboard = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <Link to="/vehicles" className="bg-white p-6 rounded-lg shadow-md block hover:shadow-lg transition-shadow">
           <div className="flex items-center">
             <TruckIcon className="h-8 w-8 text-blue-600 mr-3" />
             <div>
@@ -212,7 +212,7 @@ const Dashboard = () => {
               <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
             </div>
           </div>
-        </div>
+        </Link>
         
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex items-center">

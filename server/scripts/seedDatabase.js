@@ -8,7 +8,7 @@ const seedUsers = [
     firstName: 'Super',
     lastName: 'Admin',
     email: 'admin@deeptec.com',
-    password: 'admin@123',
+    password: 'admin123',
     role: 'admin',
     department: 'Administration',
     employeeId: 'ADMIN001',

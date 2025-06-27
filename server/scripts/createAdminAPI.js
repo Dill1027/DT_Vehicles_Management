@@ -13,7 +13,7 @@ const createAdminViaAPI = async () => {
       firstName: 'Admin',
       lastName: 'User',
       email: 'admin@deeptec.com',
-      password: 'admin@123',
+      password: 'admin123',
       role: 'Admin',
       department: 'Administration',
       employeeId: 'ADMIN001',
@@ -33,7 +33,7 @@ const createAdminViaAPI = async () => {
       console.log('\n🎉 Admin user created successfully via API!');
       console.log('=' .repeat(50));
       console.log('📧 Email: admin@deeptec.com');
-      console.log('🔑 Password: admin@123');
+      console.log('🔑 Password: admin123');
       console.log('👤 Role: Admin');
       console.log('🏢 Department: Administration');
       console.log('🆔 Employee ID: ADMIN001');
@@ -73,7 +73,7 @@ const createAdminViaAPI = async () => {
       if (error.response.status === 400 && error.response.data?.message?.includes('already exists')) {
         console.log('\n💡 The admin user might already exist. Try logging in with:');
         console.log('📧 Email: admin@deeptec.com');
-        console.log('🔑 Password: admin@123');
+        console.log('🔑 Password: admin123');
       }
     } else if (error.request) {
       // Request made but no response received

@@ -12,9 +12,11 @@ import {
   TruckIcon,
   WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
 
 const Reports = () => {
   const { hasPermission } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
     totalVehicles: 0,
@@ -125,7 +127,11 @@ const Reports = () => {
 
       {/* Statistics Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div
+          className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => navigate('/vehicles')}
+          title="View all vehicles"
+        >
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-blue-100">
               <TruckIcon className="h-6 w-6 text-blue-600" />

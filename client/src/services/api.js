@@ -5,8 +5,7 @@ import { toast } from 'react-hot-toast';
 const isDev = process.env.NODE_ENV === 'development';
 
 // Set up API base URL with fallback options for development
-const API_BASE_URL = process.env.REACT_APP_API_URL || 
-                    (isDev ? 'http://localhost:5000/api' : 'http://localhost:5001/api');
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 // Create axios instance with configurations
 const api = axios.create({
@@ -48,6 +47,11 @@ const tryAlternatePort = async (config) => {
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
+    // Don't add auth headers for login/register requests
+    if (config.url?.includes('/auth/login') || config.url?.includes('/auth/register')) {
+      return config;
+    }
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

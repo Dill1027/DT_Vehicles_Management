@@ -8,7 +8,7 @@ const authService = {
   login: async (credentials) => {
     try {
       const response = await api.post('/auth/login', credentials);
-      const { token, user } = response.data;
+      const { token, user } = response.data.data;
       
       // Store token and user data
       localStorage.setItem(TOKEN_KEY, token);
@@ -24,7 +24,7 @@ const authService = {
   register: async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
-      const { token, user } = response.data;
+      const { token, user } = response.data.data;
       
       // Store token and user data
       localStorage.setItem(TOKEN_KEY, token);
@@ -70,8 +70,19 @@ const authService = {
     // Check if token is expired
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp * 1000 > Date.now();
+      const isExpired = payload.exp * 1000 <= Date.now();
+      
+      if (isExpired) {
+        // Clear expired token
+        authService.logout();
+        return false;
+      }
+      
+      return true;
     } catch (error) {
+      // Clear invalid token
+      console.warn('Invalid token format, clearing auth data:', error);
+      authService.logout();
       return false;
     }
   },
@@ -82,6 +93,7 @@ const authService = {
       const response = await api.post('/auth/forgot-password', { email });
       return response.data;
     } catch (error) {
+      console.error('Forgot password error:', error);
       throw error;
     }
   },
@@ -92,6 +104,7 @@ const authService = {
       const response = await api.post('/auth/reset-password', { token, password });
       return response.data;
     } catch (error) {
+      console.error('Reset password error:', error);
       throw error;
     }
   },
@@ -102,6 +115,7 @@ const authService = {
       const response = await api.post('/auth/verify-email', { token });
       return response.data;
     } catch (error) {
+      console.error('Verify email error:', error);
       throw error;
     }
   },
@@ -110,7 +124,7 @@ const authService = {
   refreshToken: async () => {
     try {
       const response = await api.post('/auth/refresh-token');
-      const { token, user } = response.data;
+      const { token, user } = response.data.data;
       
       localStorage.setItem(TOKEN_KEY, token);
       localStorage.setItem(USER_KEY, JSON.stringify(user));
