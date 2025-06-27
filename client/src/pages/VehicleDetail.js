@@ -56,7 +56,7 @@ const VehicleDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (!hasPermission('delete_vehicle')) {
+    if (!hasPermission('vehicles.delete')) {
       toast.error('You do not have permission to delete vehicles');
       return;
     }
@@ -149,7 +149,7 @@ const VehicleDetail = () => {
         </div>
         
         <div className="flex gap-2">
-          {hasPermission('edit_vehicle') && (
+          {hasPermission('vehicles.edit') && (
             <Link
               to={`/vehicles/${id}/edit`}
               className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
@@ -158,7 +158,7 @@ const VehicleDetail = () => {
               Edit
             </Link>
           )}
-          {hasPermission('delete_vehicle') && (
+          {hasPermission('vehicles.delete') && (
             <button
               onClick={handleDelete}
               className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-600 rounded-md hover:bg-red-50"

@@ -129,26 +129,12 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://prabhathdilshan2001:1
     console.log(`📡 API Base URL: http://localhost:${PORT}/api`);
     console.log(`🌐 Health Check: http://localhost:${PORT}/api/health`);
   });
-  
+
   server.on('error', (error) => {
     if (error.code === 'EADDRINUSE') {
       console.error(`❌ Port ${PORT} is already in use.`);
-      console.log('🔧 Trying to find an available port...');
-      
-      // Try ports 5001-5010
-      for (let port = 5001; port <= 5010; port++) {
-        if (port !== PORT) {
-          console.log(`🔄 Trying port ${port}...`);
-          const newServer = app.listen(port, () => {
-            console.log(`✅ Server started successfully on port ${port}`);
-            console.log(`📡 API Base URL: http://localhost:${port}/api`);
-          });
-          newServer.on('error', () => {
-            console.log(`❌ Port ${port} is also in use`);
-          });
-          break;
-        }
-      }
+      console.log('🔧 Please stop other services running on this port or change the PORT in .env file');
+      process.exit(1);
     } else {
       console.error('Server error:', error);
       process.exit(1);

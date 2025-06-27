@@ -70,7 +70,7 @@ const Users = () => {
   const { hasPermission, isAdmin } = useAuth();
 
   useEffect(() => {
-    if (hasPermission('view_users') || isAdmin()) {
+    if (hasPermission('users.view') || isAdmin()) {
       fetchUsers();
     } else {
       setLoading(false);
@@ -158,7 +158,7 @@ const Users = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  if (!hasPermission('view_users') && !isAdmin()) {
+  if (!hasPermission('users.view') && !isAdmin()) {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-medium text-gray-900 mb-2">Access Denied</h3>
@@ -185,7 +185,7 @@ const Users = () => {
             Manage system users and their permissions
           </p>
         </div>
-        {hasPermission('create_user') && (
+        {hasPermission('users.create') && (
           <button
             onClick={() => setShowAddModal(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2"
@@ -347,7 +347,7 @@ const Users = () => {
                 : 'Get started by adding your first user.'
               }
             </p>
-            {hasPermission('create_user') && (
+            {hasPermission('users.create') && (
               <button
                 onClick={() => setShowAddModal(true)}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"

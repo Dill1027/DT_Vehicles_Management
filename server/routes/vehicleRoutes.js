@@ -184,7 +184,7 @@ router.post('/', authenticate, authorize('vehicles.create'), async (req, res) =>
 });
 
 // Update vehicle (add missing authentication)
-router.put('/:id', authenticate, authorize('vehicles.update'), async (req, res) => {
+router.put('/:id', authenticate, authorize('vehicles.edit'), async (req, res) => {
   try {
     const updated = await Vehicle.findByIdAndUpdate(
       req.params.id, 

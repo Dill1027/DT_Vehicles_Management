@@ -174,14 +174,15 @@ export const AuthProvider = ({ children }) => {
     if (!state.user) return false;
     
     // Admin users have all permissions
-    if (state.user.role === 'admin') return true;
+    if (state.user.role === 'Admin') return true;
     
-    // Define role-based permissions
+    // Define role-based permissions - match server permissions
     const rolePermissions = {
-      admin: ['create_vehicle', 'edit_vehicle', 'delete_vehicle', 'view_vehicle'],
-      manager: ['create_vehicle', 'edit_vehicle', 'view_vehicle'],
-      mechanic: ['edit_vehicle', 'view_vehicle'],
-      user: ['view_vehicle']
+      Admin: ['vehicles.view', 'vehicles.create', 'vehicles.edit', 'vehicles.delete', 'users.view', 'users.create', 'users.edit', 'users.delete', 'reports.view', 'reports.export'],
+      Manager: ['vehicles.view', 'vehicles.create', 'vehicles.edit', 'users.view'],
+      Mechanic: ['vehicles.view', 'vehicles.edit'],
+      Driver: ['vehicles.view'],
+      Viewer: ['vehicles.view']
     };
 
     const userPermissions = rolePermissions[state.user.role] || [];
@@ -195,7 +196,7 @@ export const AuthProvider = ({ children }) => {
 
   // Check if admin
   const isAdmin = useCallback(() => {
-    return state.user?.role === 'admin';
+    return state.user?.role === 'Admin';
   }, [state.user?.role]);
 
   // Context value

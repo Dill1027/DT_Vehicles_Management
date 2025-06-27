@@ -63,7 +63,7 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
     if (!formData.vehicleId.trim()) newErrors.vehicleId = 'Vehicle ID is required';
     if (!formData.make.trim()) newErrors.make = 'Make is required';
     if (!formData.model.trim()) newErrors.model = 'Model is required';
-    if (!formData.year.trim()) newErrors.year = 'Year is required';
+    if (!formData.year || formData.year.toString().trim() === '') newErrors.year = 'Year is required';
     if (!formData.licensePlate.trim()) newErrors.licensePlate = 'License plate is required';
     if (!formData.vin.trim()) newErrors.vin = 'VIN is required';
     

@@ -53,7 +53,7 @@ const Vehicles = () => {
   };
 
   const handleDelete = async (vehicleId) => {
-    if (!hasPermission('delete_vehicle')) {
+    if (!hasPermission('vehicles.delete')) {
       toast.error('You do not have permission to delete vehicles');
       return;
     }
@@ -71,7 +71,7 @@ const Vehicles = () => {
   };
 
   const handleEdit = (vehicle) => {
-    if (!hasPermission('edit_vehicle')) {
+    if (!hasPermission('vehicles.edit')) {
       toast.error('You do not have permission to edit vehicles');
       return;
     }
@@ -201,8 +201,8 @@ const Vehicles = () => {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onView={handleView}
-                    canEdit={hasPermission('edit_vehicle')}
-                    canDelete={hasPermission('delete_vehicle')}
+                    canEdit={hasPermission('vehicles.edit')}
+                    canDelete={hasPermission('vehicles.delete')}
                   />
                 ))}
               </div>
@@ -261,7 +261,7 @@ const Vehicles = () => {
                   : 'Get started by adding your first vehicle.'
                 }
               </p>
-              {(hasPermission('create_vehicle') || hasPermission('admin') || !hasPermission) && (
+              {(hasPermission('vehicles.create') || hasPermission('admin') || !hasPermission) && (
                 <Link
                   to="/vehicles/add"
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
