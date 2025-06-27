@@ -5,6 +5,8 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  # Set your backend API URL here after deploying your backend
+  REACT_APP_API_URL = "https://your-backend-domain.com/api"
 
 [[redirects]]
   from = "/*"
