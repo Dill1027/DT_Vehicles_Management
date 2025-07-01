@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/SimpleAuthContext';
 import { vehicleService } from '../services/vehicleService';
+import notificationService from '../services/notificationService';
 import reportService from '../services/reportService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -46,8 +47,8 @@ const Dashboard = () => {
       ] = await Promise.all([
         vehicleService.getAllVehicles({ limit: 10 }),
         vehicleService.getVehicleStats(),
-        vehicleService.getExpiringVehicles(30),
-        vehicleService.getExpiredVehicles()
+        notificationService.getExpiringVehicles(30),
+        notificationService.getExpiredVehicles()
       ]);
 
       // Fix for vehicles.slice is not a function error
