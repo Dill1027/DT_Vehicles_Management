@@ -41,12 +41,27 @@ const Vehicles = () => {
       };
 
       const response = await vehicleService.getAllVehicles(params);
-      setVehicles(response.data.vehicles || response.data);
-      setTotalPages(response.data.totalPages || 1);
-      setTotalVehicles(response.data.totalVehicles || response.data.length);
+      
+      // Handle both structured and simple response formats
+      if (response.data && response.data.vehicles) {
+        // Structured response with pagination
+        setVehicles(response.data.vehicles);
+        setTotalPages(response.data.totalPages || 1);
+        setTotalVehicles(response.data.totalVehicles || 0);
+      } else {
+        // Simple array response (fallback)
+        const vehicleArray = response.data || [];
+        setVehicles(vehicleArray);
+        setTotalPages(Math.ceil(vehicleArray.length / vehiclesPerPage));
+        setTotalVehicles(vehicleArray.length);
+      }
     } catch (error) {
       console.error('Error fetching vehicles:', error);
       toast.error('Failed to fetch vehicles');
+      // Set empty state on error
+      setVehicles([]);
+      setTotalPages(1);
+      setTotalVehicles(0);
     } finally {
       setLoading(false);
     }
@@ -159,9 +174,11 @@ const Vehicles = () => {
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Status</option>
+                <option value="active">Active</option>
                 <option value="available">Available</option>
                 <option value="in-use">In Use</option>
-                <option value="maintenance">Maintenance</option>
+                <option value="in maintenance">In Maintenance</option>
+                <option value="inactive">Inactive</option>
                 <option value="retired">Retired</option>
               </select>
             </div>

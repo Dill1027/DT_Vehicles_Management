@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/SimpleAuthContext';
 import { 
   HomeIcon, 
   TruckIcon, 
-  WrenchScrewdriverIcon, 
   UsersIcon, 
   DocumentTextIcon,
   UserCircleIcon,
@@ -40,8 +39,8 @@ const Navigation = () => {
     },
     { 
       path: '/maintenance', 
-      label: 'Maintenance', 
-      icon: WrenchScrewdriverIcon,
+      label: 'Vehicle Overview', 
+      icon: TruckIcon,
       permission: 'vehicles.view'
     },
     { 
@@ -60,9 +59,7 @@ const Navigation = () => {
   ];
 
   const filteredNavItems = navItems.filter(item => {
-    if (item.adminOnly && !isAdmin()) return false;
-    if (item.permission && !hasPermission(item.permission)) return false;
-    return true;
+    return !(item.adminOnly && !isAdmin()) && !(item.permission && !hasPermission(item.permission));
   });
 
   const isActive = (path) => {

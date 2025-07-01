@@ -16,7 +16,54 @@ const isStaticDeployment = () => {
 export const vehicleService = {
   getAllVehicles: async (params = {}) => {
     if (isStaticDeployment()) {
-      return await mockVehicleService.getAllVehicles();
+      const result = await mockVehicleService.getAllVehicles();
+      let vehicles = result.data || [];
+      
+      // Apply client-side filtering
+      if (params.search) {
+        const searchLower = params.search.toLowerCase();
+        vehicles = vehicles.filter(vehicle => 
+          vehicle.vehicleNumber?.toLowerCase().includes(searchLower) ||
+          vehicle.make?.toLowerCase().includes(searchLower) ||
+          vehicle.model?.toLowerCase().includes(searchLower) ||
+          vehicle.licensePlate?.toLowerCase().includes(searchLower) ||
+          vehicle.department?.toLowerCase().includes(searchLower) ||
+          vehicle.notes?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      // Apply status filter
+      if (params.status) {
+        vehicles = vehicles.filter(vehicle => 
+          vehicle.status?.toLowerCase() === params.status.toLowerCase()
+        );
+      }
+      
+      // Apply type filter
+      if (params.type) {
+        vehicles = vehicles.filter(vehicle => 
+          vehicle.type?.toLowerCase() === params.type.toLowerCase()
+        );
+      }
+      
+      // Apply pagination
+      const page = params.page || 1;
+      const limit = params.limit || 12;
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const totalVehicles = vehicles.length;
+      const totalPages = Math.ceil(totalVehicles / limit);
+      const paginatedVehicles = vehicles.slice(startIndex, endIndex);
+      
+      return { 
+        success: true, 
+        data: {
+          vehicles: paginatedVehicles,
+          totalVehicles,
+          totalPages,
+          currentPage: page
+        }
+      };
     }
     
     // Original API call logic here for when backend is available

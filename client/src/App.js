@@ -15,6 +15,9 @@ import Users from './pages/Users';
 import Profile from './pages/Profile';
 import Reports from './pages/Reports';
 
+// Initialize sample data for demo
+import './utils/sampleData';
+
 
 
 // Create a client

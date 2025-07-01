@@ -1,6 +1,57 @@
 import { mockVehicleService } from './mockDataService';
 
 const notificationService = {
+  // Get vehicles with expiring insurance
+  getInsuranceExpiryAlerts: async (days = 30) => {
+    try {
+      // Use mock data for static deployment
+      const vehiclesResult = await mockVehicleService.getAllVehicles();
+      const vehicles = vehiclesResult.data || [];
+      
+      const currentDate = new Date();
+      const insuranceAlerts = [];
+      
+      vehicles.forEach(vehicle => {
+        if (vehicle.insuranceExpiry) {
+          const expiryDate = new Date(vehicle.insuranceExpiry);
+          const daysUntilExpiry = Math.ceil((expiryDate - currentDate) / (1000 * 60 * 60 * 24));
+          
+          // Include vehicles with insurance expiring within the specified days or already expired
+          if (daysUntilExpiry <= days) {
+            let urgencyLevel = 'info';
+            if (daysUntilExpiry <= 0) {
+              urgencyLevel = 'expired';
+            } else if (daysUntilExpiry <= 7) {
+              urgencyLevel = 'critical';
+            } else if (daysUntilExpiry <= 15) {
+              urgencyLevel = 'warning';
+            }
+            
+            insuranceAlerts.push({
+              ...vehicle,
+              insuranceExpiryDate: vehicle.insuranceExpiry,
+              daysUntilExpiry,
+              isExpired: daysUntilExpiry <= 0,
+              urgencyLevel
+            });
+          }
+        }
+      });
+      
+      // Sort by urgency (expired first, then by days remaining)
+      insuranceAlerts.sort((a, b) => {
+        if (a.isExpired && !b.isExpired) return -1;
+        if (!a.isExpired && b.isExpired) return 1;
+        return a.daysUntilExpiry - b.daysUntilExpiry;
+      });
+      
+      return { success: true, data: insuranceAlerts };
+    } catch (error) {
+      console.error('Error fetching insurance expiry alerts:', error);
+      return { success: false, data: [] };
+    }
+  },
+
   // Get expiring vehicles
   getExpiringVehicles: async (days = 30) => {
     try {
