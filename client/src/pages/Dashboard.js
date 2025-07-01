@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/SimpleAuthContext';
 import { vehicleService } from '../services/vehicleService';
 import reportService from '../services/reportService';
 import LoadingSpinner from '../components/LoadingSpinner';
