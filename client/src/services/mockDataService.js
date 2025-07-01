@@ -7,121 +7,31 @@ const STORAGE_KEYS = {
   USERS: 'dt_users_data'
 };
 
-// Initialize with sample data if none exists
+// Initialize with empty data if none exists
 const initializeData = () => {
   if (!localStorage.getItem(STORAGE_KEYS.VEHICLES)) {
-    const sampleVehicles = [
-      {
-        id: '1',
-        vehicleId: 'DT-001',
-        make: 'Toyota',
-        model: 'Hilux',
-        year: 2022,
-        licensePlate: 'ABC-1234',
-        type: 'Pickup',
-        status: 'available',
-        fuelType: 'diesel',
-        department: 'Construction',
-        mileage: 15000,
-        lastService: '2024-06-01',
-        nextService: '2024-09-01',
-        insuranceExpiry: '2025-03-15',
-        registrationExpiry: '2025-02-28',
-        emissionExpiry: '2025-05-20',
-        revenueExpiry: '2025-01-30',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        vehicleId: 'DT-002',
-        make: 'Nissan',
-        model: 'NV200',
-        year: 2021,
-        licensePlate: 'XYZ-5678',
-        type: 'Van',
-        status: 'in-use',
-        fuelType: 'gasoline',
-        department: 'Delivery',
-        mileage: 25000,
-        lastService: '2024-05-15',
-        nextService: '2024-08-15',
-        insuranceExpiry: '2025-01-15', // Expiring soon (within 30 days)
-        registrationExpiry: '2025-01-25', // Expiring soon
-        emissionExpiry: '2025-04-25',
-        revenueExpiry: '2025-12-15',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: '3',
-        vehicleId: 'DT-003',
-        make: 'Ford',
-        model: 'Transit',
-        year: 2020,
-        licensePlate: 'DEF-9012',
-        type: 'Van',
-        status: 'maintenance',
-        fuelType: 'diesel',
-        department: 'Transport',
-        mileage: 45000,
-        lastService: '2024-04-20',
-        nextService: '2024-07-20',
-        insuranceExpiry: '2024-12-25', // Expired
-        registrationExpiry: '2024-11-15', // Expired
-        emissionExpiry: '2025-01-15',
-        revenueExpiry: '2024-11-30',
-        createdAt: new Date().toISOString()
-      }
-    ];
-    localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(sampleVehicles));
+    // Start with empty vehicles array - no sample data
+    localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify([]));
   }
 
   if (!localStorage.getItem(STORAGE_KEYS.MAINTENANCE)) {
-    const sampleMaintenance = [
-      {
-        id: '1',
-        vehicleId: '1',
-        type: 'Scheduled',
-        category: 'Oil Change',
-        description: 'Regular oil change and filter replacement',
-        status: 'completed',
-        priority: 'medium',
-        scheduledDate: '2024-06-01',
-        completedDate: '2024-06-01',
-        cost: { labor: 50, parts: 75, other: 0, total: 125 },
-        mileageAtService: 15000,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        vehicleId: '2',
-        type: 'Repair',
-        category: 'Brakes',
-        description: 'Brake pad replacement',
-        status: 'pending',
-        priority: 'high',
-        scheduledDate: '2024-07-15',
-        cost: { labor: 100, parts: 150, other: 0, total: 250 },
-        mileageAtService: 25000,
-        createdAt: new Date().toISOString()
-      }
-    ];
-    localStorage.setItem(STORAGE_KEYS.MAINTENANCE, JSON.stringify(sampleMaintenance));
+    // Start with empty maintenance array - no sample data
+    localStorage.setItem(STORAGE_KEYS.MAINTENANCE, JSON.stringify([]));
   }
 
   if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-    const sampleUsers = [
-      {
-        id: '1',
-        firstName: 'John',
-        lastName: 'Admin',
-        email: 'admin@deeptec.com',
-        role: 'Admin',
-        department: 'Administration',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      }
-    ];
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(sampleUsers));
+    // Start with default demo user only - no additional sample data
+    const defaultUser = {
+      id: '1',
+      firstName: 'Demo',
+      lastName: 'User',
+      email: 'demo@deeptec.com',
+      role: 'Admin',
+      department: 'Administration', 
+      isActive: true,
+      createdAt: new Date().toISOString()
+    };
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([defaultUser]));
   }
 };
 
