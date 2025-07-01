@@ -28,12 +28,22 @@ const VehicleList = () => {
   };
 
   const handleDelete = async (vehicleId) => {
-    if (window.confirm('Are you sure you want to delete this vehicle?')) {
+    if (window.confirm('Are you sure you want to delete this vehicle? This action cannot be undone.')) {
       try {
-        await vehicleService.deleteVehicle(vehicleId);
-        setVehicles(vehicles.filter(vehicle => vehicle._id !== vehicleId));
+        const result = await vehicleService.deleteVehicle(vehicleId);
+        if (result.success) {
+          // Handle both 'id' and '_id' properties for compatibility
+          setVehicles(vehicles.filter(vehicle => 
+            vehicle._id !== vehicleId && vehicle.id !== vehicleId
+          ));
+          // You can add a toast notification here if you have a notification system
+          console.log('Vehicle deleted successfully');
+        } else {
+          throw new Error('Delete operation failed');
+        }
       } catch (error) {
         console.error('Error deleting vehicle:', error);
+        alert('Failed to delete vehicle. Please try again.');
       }
     }
   };

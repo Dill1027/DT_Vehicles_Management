@@ -46,7 +46,8 @@ export const mockVehicleService = {
   getVehicleById: async (id) => {
     initializeData();
     const vehicles = JSON.parse(localStorage.getItem(STORAGE_KEYS.VEHICLES) || '[]');
-    const vehicle = vehicles.find(v => v.id === id);
+    // Handle both 'id' and '_id' properties for compatibility
+    const vehicle = vehicles.find(v => v.id === id || v._id === id);
     if (vehicle) {
       return { success: true, data: vehicle };
     }
@@ -56,9 +57,11 @@ export const mockVehicleService = {
   createVehicle: async (vehicleData) => {
     initializeData();
     const vehicles = JSON.parse(localStorage.getItem(STORAGE_KEYS.VEHICLES) || '[]');
+    const vehicleId = Date.now().toString();
     const newVehicle = {
       ...vehicleData,
-      id: Date.now().toString(),
+      id: vehicleId,
+      _id: vehicleId, // Add both id and _id for compatibility
       createdAt: new Date().toISOString()
     };
     vehicles.push(newVehicle);
@@ -69,7 +72,8 @@ export const mockVehicleService = {
   updateVehicle: async (id, vehicleData) => {
     initializeData();
     const vehicles = JSON.parse(localStorage.getItem(STORAGE_KEYS.VEHICLES) || '[]');
-    const index = vehicles.findIndex(v => v.id === id);
+    // Handle both 'id' and '_id' properties for compatibility
+    const index = vehicles.findIndex(v => v.id === id || v._id === id);
     if (index !== -1) {
       vehicles[index] = { ...vehicles[index], ...vehicleData, updatedAt: new Date().toISOString() };
       localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(vehicles));
@@ -81,7 +85,8 @@ export const mockVehicleService = {
   deleteVehicle: async (id) => {
     initializeData();
     const vehicles = JSON.parse(localStorage.getItem(STORAGE_KEYS.VEHICLES) || '[]');
-    const filteredVehicles = vehicles.filter(v => v.id !== id);
+    // Handle both 'id' and '_id' properties for compatibility
+    const filteredVehicles = vehicles.filter(v => v.id !== id && v._id !== id);
     localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(filteredVehicles));
     return { success: true };
   },

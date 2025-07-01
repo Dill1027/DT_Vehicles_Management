@@ -72,7 +72,7 @@ const VehicleCard = ({ vehicle, onEdit, onDelete }) => {
           Edit
         </button>
         <button
-          onClick={() => onDelete(vehicle._id)}
+          onClick={() => onDelete(vehicle._id || vehicle.id)}
           className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
         >
           Delete
