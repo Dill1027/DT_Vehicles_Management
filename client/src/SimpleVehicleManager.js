@@ -124,9 +124,9 @@ function SimpleVehicleManager() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {vehicles.map((vehicle) => (
+                {vehicles.map((vehicle, index) => (
                   <VehicleRow 
-                    key={vehicle._id}
+                    key={vehicle.id || vehicle._id || index}
                     vehicle={vehicle}
                     onUpdate={updateVehicle}
                     onDelete={deleteVehicle}

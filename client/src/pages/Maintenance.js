@@ -230,9 +230,9 @@ const Maintenance = () => {
           {maintenance.length > 0 ? (
             <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
               <div className="divide-y divide-gray-200">
-                {maintenance.map((item) => (
+                {maintenance.map((item, index) => (
                   <button 
-                    key={item._id} 
+                    key={item.id || item._id || index} 
                     className="w-full p-6 hover:bg-gray-50 cursor-pointer text-left"
                     onClick={() => navigate(`/maintenance/${item._id}`)}
                   >

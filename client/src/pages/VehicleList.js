@@ -104,9 +104,9 @@ const VehicleList = () => {
 
       {/* Vehicle Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredVehicles.map((vehicle) => (
+        {filteredVehicles.map((vehicle, index) => (
           <VehicleCard
-            key={vehicle._id}
+            key={vehicle.id || vehicle._id || index}
             vehicle={vehicle}
             onEdit={handleEdit}
             onDelete={handleDelete}
