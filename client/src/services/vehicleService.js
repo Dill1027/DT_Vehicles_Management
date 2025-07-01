@@ -1,7 +1,7 @@
-// Static-friendly vehicle service for Netlify deployment
-// This file provides vehicle management functionality without requiring a backend server
+// Backend-connected vehicle service for MongoDB integration
+// This file provides vehicle management functionality with MongoDB backend
 
-import { vehicleService, maintenanceService, userService } from './staticVehicleService';
+import { vehicleService, maintenanceService, userService } from './backendVehicleService';
 
 // Export all services
 export { vehicleService, maintenanceService, userService };
