@@ -3,10 +3,13 @@ import { mockVehicleService, mockMaintenanceService, mockUserService } from './m
 
 // Check if we're in a deployed environment without backend
 const isStaticDeployment = () => {
+  // Always use static deployment for this demo app
   // If REACT_APP_API_URL is not set or we're on Netlify without backend
   return !process.env.REACT_APP_API_URL || 
          process.env.REACT_APP_API_URL.includes('your-backend-domain') ||
-         window.location.hostname.includes('netlify.app');
+         process.env.REACT_APP_API_URL.includes('localhost:5001') ||
+         window.location.hostname.includes('netlify.app') ||
+         process.env.NODE_ENV === 'development';
 };
 
 // Vehicle Service - works with or without backend

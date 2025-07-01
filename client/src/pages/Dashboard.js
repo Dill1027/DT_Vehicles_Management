@@ -301,7 +301,7 @@ const Dashboard = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {Array.isArray(vehicles) && vehicles.length > 0 ? (
                   vehicles.slice(0, 5).map((vehicle, index) => (
-                    <tr key={vehicle._id || index}>
+                    <tr key={vehicle.id || vehicle._id || index}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
@@ -348,8 +348,8 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-3">
                 {/* Show expired first */}
-                {expiredVehicles.slice(0, 3).map((vehicle) => (
-                  <div key={`expired-${vehicle._id}`} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                {expiredVehicles.slice(0, 3).map((vehicle, index) => (
+                  <div key={`expired-${vehicle.id || vehicle._id || index}`} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                     <div>
                       <div className="font-medium text-gray-900">{vehicle.vehicleNumber}</div>
                       <div className="text-sm text-red-600">
@@ -361,8 +361,8 @@ const Dashboard = () => {
                 ))}
                 
                 {/* Show expiring soon */}
-                {expiringVehicles.slice(0, 3).map((vehicle) => (
-                  <div key={`expiring-${vehicle._id}`} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                {expiringVehicles.slice(0, 3).map((vehicle, index) => (
+                  <div key={`expiring-${vehicle.id || vehicle._id || index}`} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
                     <div>
                       <div className="font-medium text-gray-900">{vehicle.vehicleNumber}</div>
                       <div className="text-sm text-gray-600">
