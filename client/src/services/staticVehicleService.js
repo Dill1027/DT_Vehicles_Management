@@ -86,7 +86,7 @@ export const vehicleService = {
     }
     
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/vehicles/${id}`, {
+      await fetch(`${process.env.REACT_APP_API_URL}/vehicles/${id}`, {
         method: 'DELETE'
       });
       return { success: true };
@@ -202,4 +202,5 @@ export const userService = {
 };
 
 // Export default for backward compatibility
-export default { vehicleService, maintenanceService, userService };
+const services = { vehicleService, maintenanceService, userService };
+export default services;
