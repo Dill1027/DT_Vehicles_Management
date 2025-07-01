@@ -326,14 +326,6 @@ const VehicleDetail = () => {
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Maintenance History</h2>
-            {hasPermission('create_maintenance') && (
-              <Link
-                to={`/maintenance/add?vehicle=${id}`}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                Schedule Maintenance
-              </Link>
-            )}
           </div>
 
           {loadingMaintenance ? (

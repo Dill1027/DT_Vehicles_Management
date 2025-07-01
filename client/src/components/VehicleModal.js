@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { vehicleService } from '../services/vehicleService';
 
 const VehicleModal = ({ vehicle, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    vehicleId: '',
-    make: '',
-    model: '',
-    year: '',
-    color: '',
-    licensePlate: '',
-    vin: '',
-    mileage: '',
-    fuelType: 'gasoline',
-    status: 'available',
-    lastMaintenanceDate: '',
-    nextMaintenanceDate: '',
-    notes: ''
+    vehicleNumber: '', // Number plate (max 8 characters)
+    type: '', // Van, Lorry, Car, Bike
+    make: '', // BMW, Benz, etc.
+    insuranceDate: '',
+    insuranceExpiry: '',
+    imageUrl: '',
+    notes: '',
+    status: 'Available', // Available or In Maintenance
+    fuelType: 'Petrol', // Diesel or Petrol
+    monthlyMileage: '', // Monthly mileage
+    lastMaintenanceDate: ''
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -23,27 +22,32 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
   useEffect(() => {
     if (vehicle) {
       setFormData({
-        vehicleId: vehicle.vehicleId || '',
+        vehicleNumber: vehicle.vehicleNumber || vehicle.vehicleId || '',
+        type: vehicle.type || '',
         make: vehicle.make || '',
-        model: vehicle.model || '',
-        year: vehicle.year || '',
-        color: vehicle.color || '',
-        licensePlate: vehicle.licensePlate || '',
-        vin: vehicle.vin || '',
-        mileage: vehicle.mileage || '',
-        fuelType: vehicle.fuelType || 'gasoline',
-        status: vehicle.status || 'available',
+        insuranceDate: vehicle.insuranceDate ? 
+          new Date(vehicle.insuranceDate).toISOString().split('T')[0] : '',
+        insuranceExpiry: vehicle.insuranceExpiry ? 
+          new Date(vehicle.insuranceExpiry).toISOString().split('T')[0] : '',
+        imageUrl: vehicle.imageUrl || '',
+        notes: vehicle.notes || '',
+        status: vehicle.status || 'Available',
+        fuelType: vehicle.fuelType || 'Petrol',
+        monthlyMileage: vehicle.monthlyMileage || '',
         lastMaintenanceDate: vehicle.lastMaintenanceDate ? 
-          new Date(vehicle.lastMaintenanceDate).toISOString().split('T')[0] : '',
-        nextMaintenanceDate: vehicle.nextMaintenanceDate ? 
-          new Date(vehicle.nextMaintenanceDate).toISOString().split('T')[0] : '',
-        notes: vehicle.notes || ''
+          new Date(vehicle.lastMaintenanceDate).toISOString().split('T')[0] : ''
       });
     }
   }, [vehicle]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Validate number plate length
+    if (name === 'vehicleNumber' && value.length > 8) {
+      return; // Don't update if exceeds 8 characters
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -57,22 +61,43 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData(prev => ({
+          ...prev,
+          imageUrl: e.target.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.vehicleId.trim()) newErrors.vehicleId = 'Vehicle ID is required';
-    if (!formData.make.trim()) newErrors.make = 'Make is required';
-    if (!formData.model.trim()) newErrors.model = 'Model is required';
-    if (!formData.year || formData.year.toString().trim() === '') newErrors.year = 'Year is required';
-    if (!formData.licensePlate.trim()) newErrors.licensePlate = 'License plate is required';
-    if (!formData.vin.trim()) newErrors.vin = 'VIN is required';
+    if (!formData.vehicleNumber.trim()) newErrors.vehicleNumber = 'Vehicle number plate is required';
+    if (formData.vehicleNumber.length > 8) newErrors.vehicleNumber = 'Vehicle number plate cannot exceed 8 characters';
+    if (!formData.type.trim()) newErrors.type = 'Vehicle type is required';
+    if (!formData.make.trim()) newErrors.make = 'Vehicle make is required';
+    if (!formData.insuranceDate) newErrors.insuranceDate = 'Insurance date is required';
+    if (!formData.insuranceExpiry) newErrors.insuranceExpiry = 'Insurance expiry date is required';
     
-    if (formData.year && (isNaN(formData.year) || formData.year < 1900 || formData.year > new Date().getFullYear() + 1)) {
-      newErrors.year = 'Please enter a valid year';
+    // Validate insurance dates
+    if (formData.insuranceDate && formData.insuranceExpiry) {
+      const startDate = new Date(formData.insuranceDate);
+      const endDate = new Date(formData.insuranceExpiry);
+      if (endDate <= startDate) {
+        newErrors.insuranceExpiry = 'Insurance expiry date must be after insurance start date';
+      }
     }
     
-    if (formData.mileage && (isNaN(formData.mileage) || formData.mileage < 0)) {
-      newErrors.mileage = 'Please enter a valid mileage';
+    // Validate monthly mileage if provided
+    if (formData.monthlyMileage && (isNaN(formData.monthlyMileage) || formData.monthlyMileage < 0)) {
+      newErrors.monthlyMileage = 'Please enter a valid monthly mileage';
     }
 
     setErrors(newErrors);
@@ -88,10 +113,22 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
 
     setLoading(true);
     try {
-      if (vehicle && vehicle._id) {
-        await vehicleService.updateVehicle(vehicle._id, formData);
+      // Check for both _id and id properties for compatibility
+      const vehicleId = vehicle && (vehicle._id || vehicle.id);
+      console.log('Vehicle being saved:', vehicle); // Debug log
+      console.log('Vehicle ID for update:', vehicleId); // Debug log
+      console.log('Form data:', formData); // Debug log
+      
+      if (vehicleId) {
+        // Update existing vehicle
+        console.log('Updating existing vehicle with ID:', vehicleId); // Debug log
+        const result = await vehicleService.updateVehicle(vehicleId, formData);
+        console.log('Update result:', result); // Debug log
       } else {
-        await vehicleService.createVehicle(formData);
+        // Create new vehicle
+        console.log('Creating new vehicle'); // Debug log
+        const result = await vehicleService.createVehicle(formData);
+        console.log('Create result:', result); // Debug log
       }
       onSave();
     } catch (error) {
@@ -122,30 +159,60 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Vehicle Number Plate */}
               <div>
-                <label htmlFor="vehicleId" className="block text-sm font-medium text-gray-700 mb-2">
-                  Vehicle ID *
+                <label htmlFor="vehicleNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                  Vehicle Number Plate * <span className="text-xs text-gray-500">(max 8 characters)</span>
                 </label>
                 <input
                   type="text"
-                  id="vehicleId"
-                  name="vehicleId"
-                  value={formData.vehicleId}
+                  id="vehicleNumber"
+                  name="vehicleNumber"
+                  value={formData.vehicleNumber}
                   onChange={handleChange}
+                  maxLength="8"
                   className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.vehicleId ? 'border-red-500' : 'border-gray-300'
+                    errors.vehicleNumber ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="Enter vehicle ID"
+                  placeholder="ABC-1234"
                 />
-                {errors.vehicleId && <p className="mt-1 text-sm text-red-600">{errors.vehicleId}</p>}
+                <div className="flex justify-between mt-1">
+                  {errors.vehicleNumber && <p className="text-sm text-red-600">{errors.vehicleNumber}</p>}
+                  <p className="text-xs text-gray-500 ml-auto">{formData.vehicleNumber.length}/8</p>
+                </div>
               </div>
 
+              {/* Vehicle Type */}
+              <div>
+                <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
+                  Vehicle Type *
+                </label>
+                <select
+                  id="type"
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.type ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">Select vehicle type</option>
+                  <option value="Van">Van</option>
+                  <option value="Lorry">Lorry</option>
+                  <option value="Car">Car</option>
+                  <option value="Bike">Bike</option>
+                  <option value="Truck">Truck</option>
+                  <option value="Bus">Bus</option>
+                </select>
+                {errors.type && <p className="mt-1 text-sm text-red-600">{errors.type}</p>}
+              </div>
+
+              {/* Vehicle Make */}
               <div>
                 <label htmlFor="make" className="block text-sm font-medium text-gray-700 mb-2">
-                  Make *
+                  Vehicle Make *
                 </label>
-                <input
-                  type="text"
+                <select
                   id="make"
                   name="make"
                   value={formData.make}
@@ -153,119 +220,30 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
                   className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.make ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="Enter make"
-                />
+                >
+                  <option value="">Select vehicle make</option>
+                  <option value="BMW">BMW</option>
+                  <option value="Mercedes-Benz">Mercedes-Benz</option>
+                  <option value="Toyota">Toyota</option>
+                  <option value="Ford">Ford</option>
+                  <option value="Volkswagen">Volkswagen</option>
+                  <option value="Honda">Honda</option>
+                  <option value="Nissan">Nissan</option>
+                  <option value="Audi">Audi</option>
+                  <option value="Hyundai">Hyundai</option>
+                  <option value="Kia">Kia</option>
+                  <option value="Mazda">Mazda</option>
+                  <option value="Subaru">Subaru</option>
+                  <option value="Volvo">Volvo</option>
+                  <option value="Other">Other</option>
+                </select>
                 {errors.make && <p className="mt-1 text-sm text-red-600">{errors.make}</p>}
               </div>
 
-              <div>
-                <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-2">
-                  Model *
-                </label>
-                <input
-                  type="text"
-                  id="model"
-                  name="model"
-                  value={formData.model}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.model ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter model"
-                />
-                {errors.model && <p className="mt-1 text-sm text-red-600">{errors.model}</p>}
-              </div>
-
-              <div>
-                <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-2">
-                  Year *
-                </label>
-                <input
-                  type="number"
-                  id="year"
-                  name="year"
-                  value={formData.year}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.year ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter year"
-                />
-                {errors.year && <p className="mt-1 text-sm text-red-600">{errors.year}</p>}
-              </div>
-
-              <div>
-                <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-2">
-                  Color
-                </label>
-                <input
-                  type="text"
-                  id="color"
-                  name="color"
-                  value={formData.color}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter color"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="licensePlate" className="block text-sm font-medium text-gray-700 mb-2">
-                  License Plate *
-                </label>
-                <input
-                  type="text"
-                  id="licensePlate"
-                  name="licensePlate"
-                  value={formData.licensePlate}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.licensePlate ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter license plate"
-                />
-                {errors.licensePlate && <p className="mt-1 text-sm text-red-600">{errors.licensePlate}</p>}
-              </div>
-
-              <div>
-                <label htmlFor="vin" className="block text-sm font-medium text-gray-700 mb-2">
-                  VIN *
-                </label>
-                <input
-                  type="text"
-                  id="vin"
-                  name="vin"
-                  value={formData.vin}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.vin ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter VIN"
-                />
-                {errors.vin && <p className="mt-1 text-sm text-red-600">{errors.vin}</p>}
-              </div>
-
-              <div>
-                <label htmlFor="mileage" className="block text-sm font-medium text-gray-700 mb-2">
-                  Mileage
-                </label>
-                <input
-                  type="number"
-                  id="mileage"
-                  name="mileage"
-                  value={formData.mileage}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.mileage ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter mileage"
-                />
-                {errors.mileage && <p className="mt-1 text-sm text-red-600">{errors.mileage}</p>}
-              </div>
-
+              {/* Fuel Type */}
               <div>
                 <label htmlFor="fuelType" className="block text-sm font-medium text-gray-700 mb-2">
-                  Fuel Type
+                  Fuel Type *
                 </label>
                 <select
                   id="fuelType"
@@ -274,16 +252,51 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="gasoline">Gasoline</option>
-                  <option value="diesel">Diesel</option>
-                  <option value="electric">Electric</option>
-                  <option value="hybrid">Hybrid</option>
+                  <option value="Petrol">Petrol</option>
+                  <option value="Diesel">Diesel</option>
                 </select>
               </div>
 
+              {/* Insurance Date */}
+              <div>
+                <label htmlFor="insuranceDate" className="block text-sm font-medium text-gray-700 mb-2">
+                  Insurance Date *
+                </label>
+                <input
+                  type="date"
+                  id="insuranceDate"
+                  name="insuranceDate"
+                  value={formData.insuranceDate}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.insuranceDate ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.insuranceDate && <p className="mt-1 text-sm text-red-600">{errors.insuranceDate}</p>}
+              </div>
+
+              {/* Insurance Expiry */}
+              <div>
+                <label htmlFor="insuranceExpiry" className="block text-sm font-medium text-gray-700 mb-2">
+                  Insurance Expiry *
+                </label>
+                <input
+                  type="date"
+                  id="insuranceExpiry"
+                  name="insuranceExpiry"
+                  value={formData.insuranceExpiry}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.insuranceExpiry ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.insuranceExpiry && <p className="mt-1 text-sm text-red-600">{errors.insuranceExpiry}</p>}
+              </div>
+
+              {/* Status */}
               <div>
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
+                  Status *
                 </label>
                 <select
                   id="status"
@@ -292,12 +305,32 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="available">Available</option>
-                  <option value="in-use">In Use</option>
-                  <option value="maintenance">Maintenance</option>
+                  <option value="Available">Available</option>
+                  <option value="In Maintenance">In Maintenance</option>
                 </select>
               </div>
 
+              {/* Monthly Mileage */}
+              <div>
+                <label htmlFor="monthlyMileage" className="block text-sm font-medium text-gray-700 mb-2">
+                  Monthly Mileage (km)
+                </label>
+                <input
+                  type="number"
+                  id="monthlyMileage"
+                  name="monthlyMileage"
+                  value={formData.monthlyMileage}
+                  onChange={handleChange}
+                  min="0"
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.monthlyMileage ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter monthly mileage"
+                />
+                {errors.monthlyMileage && <p className="mt-1 text-sm text-red-600">{errors.monthlyMileage}</p>}
+              </div>
+
+              {/* Last Maintenance Date */}
               <div>
                 <label htmlFor="lastMaintenanceDate" className="block text-sm font-medium text-gray-700 mb-2">
                   Last Maintenance Date
@@ -311,20 +344,29 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+            </div>
 
-              <div>
-                <label htmlFor="nextMaintenanceDate" className="block text-sm font-medium text-gray-700 mb-2">
-                  Next Maintenance Date
-                </label>
-                <input
-                  type="date"
-                  id="nextMaintenanceDate"
-                  name="nextMaintenanceDate"
-                  value={formData.nextMaintenanceDate}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+            {/* Vehicle Image */}
+            <div className="mt-6">
+              <label htmlFor="vehicleImage" className="block text-sm font-medium text-gray-700 mb-2">
+                Vehicle Image
+              </label>
+              <input
+                type="file"
+                id="vehicleImage"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              {formData.imageUrl && (
+                <div className="mt-4">
+                  <img
+                    src={formData.imageUrl}
+                    alt="Vehicle preview"
+                    className="w-32 h-32 object-cover rounded-md border border-gray-300"
+                  />
+                </div>
+              )}
             </div>
 
             <div>
@@ -369,6 +411,27 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
       </div>
     </div>
   );
+};
+
+VehicleModal.propTypes = {
+  vehicle: PropTypes.shape({
+    _id: PropTypes.string,
+    id: PropTypes.string,
+    vehicleNumber: PropTypes.string,
+    vehicleId: PropTypes.string,
+    type: PropTypes.string,
+    make: PropTypes.string,
+    insuranceDate: PropTypes.string,
+    insuranceExpiry: PropTypes.string,
+    imageUrl: PropTypes.string,
+    notes: PropTypes.string,
+    status: PropTypes.string,
+    fuelType: PropTypes.string,
+    monthlyMileage: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    lastMaintenanceDate: PropTypes.string
+  }),
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired
 };
 
 export default VehicleModal;

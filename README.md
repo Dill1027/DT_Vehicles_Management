@@ -131,7 +131,7 @@ DT_Vehicles_Management/
    Create `.env` file in the server directory:
    ```env
    NODE_ENV=development
-   PORT=5000
+   PORT=5001
    MONGODB_URI=mongodb://localhost:27017/dt_vehicles
    JWT_SECRET=your_jwt_secret_key_here
    JWT_EXPIRE=30d
@@ -145,7 +145,7 @@ DT_Vehicles_Management/
 
 5. **Start the development servers**
    
-   Backend (runs on http://localhost:5000):
+   Backend (runs on http://localhost:5001):
    ```bash
    cd server
    npm run dev

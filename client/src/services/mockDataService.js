@@ -70,15 +70,34 @@ export const mockVehicleService = {
   },
 
   updateVehicle: async (id, vehicleData) => {
+    console.log('MockDataService: Updating vehicle with ID:', id); // Debug log
+    console.log('MockDataService: Update data:', vehicleData); // Debug log
     initializeData();
     const vehicles = JSON.parse(localStorage.getItem(STORAGE_KEYS.VEHICLES) || '[]');
+    console.log('MockDataService: Current vehicles:', vehicles); // Debug log
+    
     // Handle both 'id' and '_id' properties for compatibility
     const index = vehicles.findIndex(v => v.id === id || v._id === id);
+    console.log('MockDataService: Found vehicle at index:', index); // Debug log
+    
     if (index !== -1) {
-      vehicles[index] = { ...vehicles[index], ...vehicleData, updatedAt: new Date().toISOString() };
+      // Preserve the original ID fields and merge with updated data
+      const originalVehicle = vehicles[index];
+      console.log('MockDataService: Original vehicle:', originalVehicle); // Debug log
+      
+      vehicles[index] = { 
+        ...originalVehicle, 
+        ...vehicleData, 
+        id: originalVehicle.id, // Preserve original id
+        _id: originalVehicle._id, // Preserve original _id
+        updatedAt: new Date().toISOString() 
+      };
+      
+      console.log('MockDataService: Updated vehicle:', vehicles[index]); // Debug log
       localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(vehicles));
       return { success: true, data: vehicles[index] };
     }
+    console.error('MockDataService: Vehicle not found with ID:', id); // Debug log
     throw new Error('Vehicle not found');
   },
 
