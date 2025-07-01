@@ -26,6 +26,7 @@ const initializeData = () => {
         lastService: '2024-06-01',
         nextService: '2024-09-01',
         insuranceExpiry: '2025-03-15',
+        registrationExpiry: '2025-02-28',
         emissionExpiry: '2025-05-20',
         revenueExpiry: '2025-01-30',
         createdAt: new Date().toISOString()
@@ -44,7 +45,8 @@ const initializeData = () => {
         mileage: 25000,
         lastService: '2024-05-15',
         nextService: '2024-08-15',
-        insuranceExpiry: '2025-02-10',
+        insuranceExpiry: '2025-01-15', // Expiring soon (within 30 days)
+        registrationExpiry: '2025-01-25', // Expiring soon
         emissionExpiry: '2025-04-25',
         revenueExpiry: '2025-12-15',
         createdAt: new Date().toISOString()
@@ -63,7 +65,8 @@ const initializeData = () => {
         mileage: 45000,
         lastService: '2024-04-20',
         nextService: '2024-07-20',
-        insuranceExpiry: '2024-12-05',
+        insuranceExpiry: '2024-12-25', // Expired
+        registrationExpiry: '2024-11-15', // Expired
         emissionExpiry: '2025-01-15',
         revenueExpiry: '2024-11-30',
         createdAt: new Date().toISOString()

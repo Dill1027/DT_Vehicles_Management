@@ -1,105 +1,220 @@
-import api from './api';
+import { mockVehicleService } from './mockDataService';
 
 const notificationService = {
   // Get expiring vehicles
   getExpiringVehicles: async (days = 30) => {
     try {
-      const response = await api.get(`/vehicles/expiring?days=${days}`);
-      return response.data;
+      // Use mock data for static deployment
+      const vehiclesResult = await mockVehicleService.getAllVehicles();
+      const vehicles = vehiclesResult.data || [];
+      
+      const currentDate = new Date();
+      const expiringVehicles = [];
+      
+      vehicles.forEach(vehicle => {
+        const expiringDocs = [];
+        
+        // Check insurance expiry
+        if (vehicle.insuranceExpiry) {
+          const expiryDate = new Date(vehicle.insuranceExpiry);
+          const daysUntilExpiry = Math.ceil((expiryDate - currentDate) / (1000 * 60 * 60 * 24));
+          if (daysUntilExpiry <= days && daysUntilExpiry > 0) {
+            expiringDocs.push({ type: 'Insurance', expiryDate: vehicle.insuranceExpiry, daysUntilExpiry });
+          }
+        }
+        
+        // Check registration expiry
+        if (vehicle.registrationExpiry) {
+          const expiryDate = new Date(vehicle.registrationExpiry);
+          const daysUntilExpiry = Math.ceil((expiryDate - currentDate) / (1000 * 60 * 60 * 24));
+          if (daysUntilExpiry <= days && daysUntilExpiry > 0) {
+            expiringDocs.push({ type: 'Registration', expiryDate: vehicle.registrationExpiry, daysUntilExpiry });
+          }
+        }
+        
+        if (expiringDocs.length > 0) {
+          expiringVehicles.push({
+            ...vehicle,
+            expiringDocuments: expiringDocs,
+            nearestExpiryDays: Math.min(...expiringDocs.map(doc => doc.daysUntilExpiry))
+          });
+        }
+      });
+      
+      return { success: true, data: expiringVehicles };
     } catch (error) {
       console.error('Error fetching expiring vehicles:', error);
-      throw error;
+      return { success: false, data: [] };
     }
   },
 
   // Get expired vehicles
   getExpiredVehicles: async () => {
     try {
-      const response = await api.get('/vehicles/expired');
-      return response.data;
+      // Use mock data for static deployment
+      const vehiclesResult = await mockVehicleService.getAllVehicles();
+      const vehicles = vehiclesResult.data || [];
+      
+      const currentDate = new Date();
+      const expiredVehicles = [];
+      
+      vehicles.forEach(vehicle => {
+        const expiredDocs = [];
+        
+        // Check insurance expiry
+        if (vehicle.insuranceExpiry) {
+          const expiryDate = new Date(vehicle.insuranceExpiry);
+          const daysUntilExpiry = Math.ceil((expiryDate - currentDate) / (1000 * 60 * 60 * 24));
+          if (daysUntilExpiry < 0) {
+            expiredDocs.push({ type: 'Insurance', expiryDate: vehicle.insuranceExpiry, daysOverdue: Math.abs(daysUntilExpiry) });
+          }
+        }
+        
+        // Check registration expiry
+        if (vehicle.registrationExpiry) {
+          const expiryDate = new Date(vehicle.registrationExpiry);
+          const daysUntilExpiry = Math.ceil((expiryDate - currentDate) / (1000 * 60 * 60 * 24));
+          if (daysUntilExpiry < 0) {
+            expiredDocs.push({ type: 'Registration', expiryDate: vehicle.registrationExpiry, daysOverdue: Math.abs(daysUntilExpiry) });
+          }
+        }
+        
+        if (expiredDocs.length > 0) {
+          expiredVehicles.push({
+            ...vehicle,
+            expiredDocuments: expiredDocs
+          });
+        }
+      });
+      
+      return { success: true, data: expiredVehicles };
     } catch (error) {
       console.error('Error fetching expired vehicles:', error);
-      throw error;
+      return { success: false, data: [] };
     }
   },
 
-  // Trigger manual notifications
+  // Trigger manual notifications (mock)
   triggerManualNotifications: async (vehicleId, notificationType) => {
     try {
-      const response = await api.post('/vehicles/notify', {
-        vehicleId,
-        type: notificationType
-      });
-      return response.data;
+      // Mock implementation - just return success
+      return { 
+        success: true, 
+        message: `${notificationType} notification triggered for vehicle ${vehicleId}` 
+      };
     } catch (error) {
       console.error('Error triggering notifications:', error);
-      throw error;
+      return { success: false, message: 'Failed to trigger notification' };
     }
   },
 
-  // Get notification history
+  // Get notification history (mock)
   getNotificationHistory: async (vehicleId) => {
     try {
-      const response = await api.get(`/vehicles/${vehicleId}/notifications`);
-      return response.data;
+      // Mock notification history
+      return { 
+        success: true, 
+        data: [
+          {
+            id: '1',
+            vehicleId,
+            type: 'Insurance Expiry',
+            message: 'Insurance expiring in 7 days',
+            sentAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            status: 'sent'
+          },
+          {
+            id: '2',
+            vehicleId,
+            type: 'Maintenance Reminder',
+            message: 'Scheduled maintenance due',
+            sentAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+            status: 'sent'
+          }
+        ]
+      };
     } catch (error) {
       console.error('Error fetching notification history:', error);
-      throw error;
+      return { success: false, data: [] };
     }
   },
 
-  // Get expiry summary
+  // Get expiry summary (mock)
   getExpirySummary: async () => {
     try {
-      const response = await api.get('/vehicles/expiry-summary');
-      return response.data;
+      const expiringResult = await notificationService.getExpiringVehicles(30);
+      const expiredResult = await notificationService.getExpiredVehicles();
+      
+      return { 
+        success: true, 
+        data: {
+          expiringSoon: expiringResult.data?.length || 0,
+          expired: expiredResult.data?.length || 0,
+          total: (expiringResult.data?.length || 0) + (expiredResult.data?.length || 0)
+        }
+      };
     } catch (error) {
       console.error('Error fetching expiry summary:', error);
-      throw error;
+      return { success: false, data: { expiringSoon: 0, expired: 0, total: 0 } };
     }
   },
 
-  // Update notification preferences
+  // Update notification preferences (mock)
   updateNotificationPreferences: async (preferences) => {
     try {
-      const response = await api.put('/users/notification-preferences', preferences);
-      return response.data;
+      // Mock implementation - just return success
+      localStorage.setItem('notificationPreferences', JSON.stringify(preferences));
+      return { 
+        success: true, 
+        message: 'Notification preferences updated successfully' 
+      };
     } catch (error) {
       console.error('Error updating notification preferences:', error);
-      throw error;
+      return { success: false, message: 'Failed to update preferences' };
     }
   },
 
-  // Trigger manual notification check
+  // Trigger manual notification check (mock)
   triggerManualNotificationCheck: async (days = 30) => {
     try {
-      const response = await api.post('/vehicles/notifications/trigger', { days });
-      return response.data;
+      const expiringResult = await notificationService.getExpiringVehicles(days);
+      const count = expiringResult.data?.length || 0;
+      
+      return { 
+        success: true, 
+        message: `Manual notification check completed for ${count} vehicles` 
+      };
     } catch (error) {
       console.error('Error triggering manual notification check:', error);
-      throw error;
+      return { success: false, message: 'Failed to trigger notification check' };
     }
   },
 
-  // Send weekly summary report
+  // Send weekly summary report (mock)
   sendWeeklySummaryReport: async () => {
     try {
-      const response = await api.post('/vehicles/reports/weekly');
-      return response.data;
+      return { 
+        success: true, 
+        message: 'Weekly summary report sent successfully',
+        reportUrl: '/reports/weekly-' + Date.now() + '.pdf'
+      };
     } catch (error) {
       console.error('Error sending weekly summary report:', error);
-      throw error;
+      return { success: false, message: 'Failed to send weekly report' };
     }
   },
 
-  // Send monthly summary report
+  // Send monthly summary report (mock)
   sendMonthlySummaryReport: async () => {
     try {
-      const response = await api.post('/vehicles/reports/monthly');
-      return response.data;
+      return { 
+        success: true, 
+        message: 'Monthly summary report sent successfully',
+        reportUrl: '/reports/monthly-' + Date.now() + '.pdf'
+      };
     } catch (error) {
       console.error('Error sending monthly summary report:', error);
-      throw error;
+      return { success: false, message: 'Failed to send monthly report' };
     }
   }
 };
