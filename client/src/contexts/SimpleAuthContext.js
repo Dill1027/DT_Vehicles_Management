@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { mockUserService } from '../services/mockDataService';
 
 const AuthContext = createContext();
@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Mock login function (always succeeds)
-  const login = async (credentials) => {
+  const login = useCallback(async (credentials) => {
     setLoading(true);
     try {
       // Simulate API call delay
@@ -42,30 +42,54 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Mock logout function
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setIsAuthenticated(false);
-  };
+  }, []);
 
   // Mock permission check (always returns true for demo)
-  const hasPermission = (permission) => {
+  const hasPermission = useCallback((permission) => {
     return true; // Allow all actions in demo mode
-  };
+  }, []);
 
-  const value = {
+  // Mock role check (always returns true for admin)
+  const hasRole = useCallback((role) => {
+    return user?.role === role || user?.role === 'admin';
+  }, [user?.role]);
+
+  // Mock admin check (demo user is always admin)
+  const isAdmin = useCallback(() => {
+    return user?.role === 'admin';
+  }, [user?.role]);
+
+  // Mock update user function
+  const updateUser = useCallback((userData) => {
+    setUser(prevUser => ({ ...prevUser, ...userData }));
+  }, []);
+
+  // Mock clear error function
+  const clearError = useCallback(() => {
+    // No-op for demo
+  }, []);
+
+  const value = useMemo(() => ({
     user,
     isAuthenticated,
     loading,
     login,
     logout,
     hasPermission,
+    hasRole,
+    isAdmin,
+    updateUser,
+    clearError,
     // Add some default user data for demo
     error: null,
     token: 'demo-token'
-  };
+  }), [user, isAuthenticated, loading, login, logout, hasPermission, hasRole, isAdmin, updateUser, clearError]);
 
   return (
     <AuthContext.Provider value={value}>
