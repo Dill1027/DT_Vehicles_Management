@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { vehicleService } from './services/staticVehicleService';
 
 // Simple Vehicle Management Component (based on your boilerplate)
 function SimpleVehicleManager() {
@@ -14,8 +14,8 @@ function SimpleVehicleManager() {
   const fetchVehicles = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/vehicles');
-      setVehicles(response.data.success ? response.data.data : response.data);
+      const response = await vehicleService.getAllVehicles();
+      setVehicles(response.success ? response.data : []);
       setError(null);
     } catch (err) {
       console.error('Error fetching vehicles:', err);
@@ -27,10 +27,13 @@ function SimpleVehicleManager() {
 
   const addVehicle = async (vehicleData) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/vehicles', vehicleData);
-      const newVehicle = response.data.success ? response.data.data : response.data;
-      setVehicles([...vehicles, newVehicle]);
-      return true;
+      const response = await vehicleService.createVehicle(vehicleData);
+      if (response.success) {
+        setVehicles([...vehicles, response.data]);
+        return true;
+      }
+      setError('Failed to add vehicle');
+      return false;
     } catch (err) {
       console.error('Error adding vehicle:', err);
       setError('Failed to add vehicle');
@@ -40,10 +43,13 @@ function SimpleVehicleManager() {
 
   const updateVehicle = async (id, vehicleData) => {
     try {
-      const response = await axios.put(`http://localhost:5000/api/vehicles/${id}`, vehicleData);
-      const updatedVehicle = response.data.success ? response.data.data : response.data;
-      setVehicles(vehicles.map(v => v._id === id ? updatedVehicle : v));
-      return true;
+      const response = await vehicleService.updateVehicle(id, vehicleData);
+      if (response.success) {
+        setVehicles(vehicles.map(v => (v.id === id || v._id === id) ? response.data : v));
+        return true;
+      }
+      setError('Failed to update vehicle');
+      return false;
     } catch (err) {
       console.error('Error updating vehicle:', err);
       setError('Failed to update vehicle');
@@ -55,13 +61,24 @@ function SimpleVehicleManager() {
     if (!window.confirm('Are you sure you want to delete this vehicle?')) return;
     
     try {
-      await axios.delete(`http://localhost:5000/api/vehicles/${id}`);
-      setVehicles(vehicles.filter(v => v._id !== id));
-      return true;
+      const response = await vehicleService.deleteVehicle(id);
+      if (response.success) {
+        setVehicles(vehicles.filter(v => v.id !== id && v._id !== id));
+        return true;
+      }
+      setError('Failed to delete vehicle');
+      return false;
     } catch (err) {
       console.error('Error deleting vehicle:', err);
       setError('Failed to delete vehicle');
       return false;
+    }
+  };
+
+  const clearAllVehicles = () => {
+    if (window.confirm('Are you sure you want to delete ALL vehicles? This action cannot be undone.')) {
+      localStorage.removeItem('dt_vehicles_data');
+      setVehicles([]);
     }
   };
 
@@ -90,10 +107,18 @@ function SimpleVehicleManager() {
 
       {/* Vehicle List */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-gray-900">
             Vehicles ({vehicles.length})
           </h2>
+          {vehicles.length > 0 && (
+            <button
+              onClick={clearAllVehicles}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Clear All Vehicles
+            </button>
+          )}
         </div>
         
         {vehicles.length === 0 ? (
@@ -389,7 +414,8 @@ function VehicleRow({ vehicle, onUpdate, onDelete }) {
   const [isEditing, setIsEditing] = useState(false);
 
   const handleUpdate = async (data) => {
-    const success = await onUpdate(vehicle._id, data);
+    const vehicleId = vehicle.id || vehicle._id;
+    const success = await onUpdate(vehicleId, data);
     if (success) {
       setIsEditing(false);
     }
@@ -455,7 +481,7 @@ function VehicleRow({ vehicle, onUpdate, onDelete }) {
           Edit
         </button>
         <button
-          onClick={() => onDelete(vehicle._id)}
+          onClick={() => onDelete(vehicle.id || vehicle._id)}
           className="text-red-600 hover:text-red-900"
         >
           Delete
