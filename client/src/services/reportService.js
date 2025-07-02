@@ -24,7 +24,7 @@ const reportService = {
         totalVehicles: vehicles.length,
         availableVehicles: vehicles.filter(v => v.status === 'available').length,
         inUseVehicles: vehicles.filter(v => v.status === 'in-use').length,
-        maintenanceVehicles: vehicles.filter(v => v.status === 'maintenance').length,
+        inUse: vehicles.filter(v => v.status === 'In Service').length,
         vehicles: vehicles.map(v => ({
           vehicleId: v.vehicleId,
           make: v.make,
@@ -92,32 +92,6 @@ const reportService = {
     }
   },
 
-  // Download maintenance report (mock)
-  downloadMaintenanceReport: async () => {
-    try {
-      // Mock maintenance report with sample data
-      const maintenanceData = {
-        totalMaintenanceRecords: 15,
-        pendingMaintenance: 3,
-        completedMaintenance: 12,
-        totalCost: 12500,
-        averageCostPerVehicle: 2083,
-        maintenanceByType: {
-          'Scheduled': 8,
-          'Repair': 4,
-          'Emergency': 3
-        }
-      };
-      
-      reportService.generateMockPDF('Maintenance Report', maintenanceData);
-      
-      return { success: true };
-    } catch (error) {
-      console.error('Error downloading maintenance report:', error);
-      throw new Error('Failed to generate maintenance report');
-    }
-  },
-
   // Get report statistics (mock)
   getReportStatistics: async () => {
     try {
@@ -133,7 +107,7 @@ const reportService = {
           vehiclesByStatus: {
             available: vehicles.filter(v => v.status === 'available').length,
             'in-use': vehicles.filter(v => v.status === 'in-use').length,
-            maintenance: vehicles.filter(v => v.status === 'maintenance').length
+            inUse: vehicles.filter(v => v.status === 'In Service').length
           }
         }
       };

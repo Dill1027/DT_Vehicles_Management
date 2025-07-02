@@ -1,6 +1,5 @@
 const Notification = require('../models/Notification');
 const Vehicle = require('../models/Vehicle');
-const User = require('../models/User');
 const { sendExpiryNotification, sendSummaryReport } = require('../utils/email');
 const cron = require('node-cron');
 
@@ -305,7 +304,6 @@ class NotificationService {
   async checkAndCreateNotifications() {
     try {
       await this.checkVehicleExpiries();
-      await this.checkUserLicenseExpiries();
       await this.checkMaintenanceDue();
       console.log('Legacy notification check completed successfully');
     } catch (error) {
@@ -316,31 +314,6 @@ class NotificationService {
   async checkVehicleExpiries() {
     // Use the new enhanced method
     return await this.checkAndNotifyExpiringDocuments(30);
-  }
-
-  async checkUserLicenseExpiries() {
-    try {
-      const users = await User.find({ licenseExpiry: { $exists: true } });
-      const now = new Date();
-      const alertPeriods = [30, 15, 7, 1];
-
-      for (const user of users) {
-        for (const period of alertPeriods) {
-          const alertDate = new Date();
-          alertDate.setDate(now.getDate() + period);
-
-          if (user.licenseExpiry && this.isSameDate(user.licenseExpiry, alertDate)) {
-            await this.createLicenseExpiryNotification({
-              user: user._id,
-              expiryDate: user.licenseExpiry,
-              period
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error checking user license expiries:', error);
-    }
   }
 
   async checkMaintenanceDue() {
@@ -510,17 +483,20 @@ class NotificationService {
     const recipients = [];
     
     try {
-      // Add admin users
-      const adminUsers = await User.find({ role: 'admin' });
-      adminUsers.forEach(user => {
-        recipients.push({ user: user._id, read: false });
+      // Add default admin emails as recipients
+      NOTIFICATION_CONFIG.defaultRecipients.forEach(email => {
+        recipients.push({ email: email, read: false });
       });
 
-      // Add vehicle's assigned driver if exists
+      // Add department-specific recipients if vehicle has department info
       if (data.vehicleId) {
-        const vehicle = await Vehicle.findById(data.vehicleId).populate('assignedDriver');
-        if (vehicle && vehicle.assignedDriver) {
-          recipients.push({ user: vehicle.assignedDriver._id, read: false });
+        const vehicle = await Vehicle.findById(data.vehicleId);
+        if (vehicle && vehicle.department && NOTIFICATION_CONFIG.departmentRecipients[vehicle.department]) {
+          NOTIFICATION_CONFIG.departmentRecipients[vehicle.department].forEach(email => {
+            if (!recipients.some(r => r.email === email)) {
+              recipients.push({ email: email, read: false });
+            }
+          });
         }
       }
     } catch (error) {

@@ -1,5 +1,4 @@
 const Vehicle = require('../models/Vehicle');
-const User = require('../models/User');
 const { validationResult } = require('express-validator');
 
 // Get all vehicles with filtering and pagination
@@ -217,95 +216,6 @@ const deleteVehicle = async (req, res) => {
 };
 
 // Assign driver to vehicle
-const assignDriver = async (req, res) => {
-  try {
-    const { vehicleId, driverId } = req.body;
-
-    // Verify driver exists and is active
-    const driver = await User.findById(driverId);
-    if (!driver || !driver.isActive) {
-      return res.status(404).json({
-        success: false,
-        message: 'Driver not found or inactive'
-      });
-    }
-
-    const vehicle = await Vehicle.findByIdAndUpdate(
-      vehicleId,
-      { assignedDriver: driverId },
-      { new: true }
-    ).populate('assignedDriver', 'firstName lastName email employeeId');
-
-    if (!vehicle) {
-      return res.status(404).json({
-        success: false,
-        message: 'Vehicle not found'
-      });
-    }
-
-    // Update user's assigned vehicles
-    await User.findByIdAndUpdate(
-      driverId,
-      { $addToSet: { assignedVehicles: vehicleId } }
-    );
-
-    res.json({
-      success: true,
-      message: 'Driver assigned successfully',
-      data: vehicle
-    });
-  } catch (error) {
-    console.error('Assign driver error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error assigning driver',
-      error: error.message
-    });
-  }
-};
-
-// Unassign driver from vehicle
-const unassignDriver = async (req, res) => {
-  try {
-    const { vehicleId } = req.params;
-
-    const vehicle = await Vehicle.findById(vehicleId);
-    if (!vehicle) {
-      return res.status(404).json({
-        success: false,
-        message: 'Vehicle not found'
-      });
-    }
-
-    const previousDriverId = vehicle.assignedDriver;
-
-    // Remove driver assignment
-    vehicle.assignedDriver = null;
-    await vehicle.save();
-
-    // Update user's assigned vehicles
-    if (previousDriverId) {
-      await User.findByIdAndUpdate(
-        previousDriverId,
-        { $pull: { assignedVehicles: vehicleId } }
-      );
-    }
-
-    res.json({
-      success: true,
-      message: 'Driver unassigned successfully',
-      data: vehicle
-    });
-  } catch (error) {
-    console.error('Unassign driver error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error unassigning driver',
-      error: error.message
-    });
-  }
-};
-
 // Get vehicle statistics
 const getVehicleStats = async (req, res) => {
   try {
@@ -360,7 +270,5 @@ module.exports = {
   createVehicle,
   updateVehicle,
   deleteVehicle,
-  assignDriver,
-  unassignDriver,
   getVehicleStats
 };

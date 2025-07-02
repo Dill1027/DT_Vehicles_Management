@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/SimpleAuthContext';
+
 import { vehicleService } from '../services/vehicleService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { 
@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 const VehicleDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { hasPermission } = useAuth();
+
   
   const [vehicle, setVehicle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,11 +39,6 @@ const VehicleDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (!hasPermission('vehicles.delete')) {
-      toast.error('You do not have permission to delete vehicles');
-      return;
-    }
-
     if (window.confirm('Are you sure you want to delete this vehicle? This action cannot be undone.')) {
       try {
         await vehicleService.deleteVehicle(id);
@@ -119,7 +114,7 @@ const VehicleDetail = () => {
         </div>
         
         <div className="flex gap-2">
-          {hasPermission('vehicles.edit') && (
+          { (
             <Link
               to={`/vehicles/${id}/edit`}
               className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
@@ -128,7 +123,7 @@ const VehicleDetail = () => {
               Edit
             </Link>
           )}
-          {hasPermission('vehicles.delete') && (
+          { (
             <button
               onClick={handleDelete}
               className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-600 rounded-md hover:bg-red-50"

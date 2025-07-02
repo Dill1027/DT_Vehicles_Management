@@ -10,28 +10,18 @@ const STORAGE_KEYS = {
 // Initialize with empty data if none exists
 const initializeData = () => {
   if (!localStorage.getItem(STORAGE_KEYS.VEHICLES)) {
-    // Start with empty vehicles array - no sample data
+    // Start with completely empty vehicles array
     localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify([]));
   }
 
   if (!localStorage.getItem(STORAGE_KEYS.MAINTENANCE)) {
-    // Start with empty maintenance array - no sample data
+    // Start with completely empty maintenance array
     localStorage.setItem(STORAGE_KEYS.MAINTENANCE, JSON.stringify([]));
   }
 
   if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-    // Start with default demo user only - no additional sample data
-    const defaultUser = {
-      id: '1',
-      firstName: 'Demo',
-      lastName: 'User',
-      email: 'demo@deeptec.com',
-      role: 'Admin',
-      department: 'Administration', 
-      isActive: true,
-      createdAt: new Date().toISOString()
-    };
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([defaultUser]));
+    // Start with completely empty users array - no default demo user
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([]));
   }
 };
 

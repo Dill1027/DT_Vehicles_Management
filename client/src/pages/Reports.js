@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/SimpleAuthContext';
 import { vehicleService } from '../services/vehicleService';
 import reportService from '../services/reportService';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -15,7 +14,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 const Reports = () => {
-  const { hasPermission } = useAuth();
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
@@ -44,11 +43,6 @@ const Reports = () => {
   };
 
   const handleDownloadReport = async (reportType) => {
-    if (!hasPermission('reports.export')) {
-      toast.error('You do not have permission to export reports');
-      return;
-    }
-
     try {
       setLoading(true);
       toast.loading('Generating report...');
@@ -59,9 +53,6 @@ const Reports = () => {
           break;
         case 'expiry-alerts':
           await reportService.downloadExpiryAlertsReport(30);
-          break;
-        case 'maintenance':
-          await reportService.downloadMaintenanceReport();
           break;
         default:
           throw new Error('Unknown report type');
@@ -82,7 +73,7 @@ const Reports = () => {
     {
       id: 'vehicle-summary',
       title: 'Vehicle Summary Report',
-      description: 'Comprehensive overview of all vehicles including status, maintenance, and document expiry information.',
+      description: 'Comprehensive overview of all vehicles including status and document expiry information.',
       icon: TruckIcon,
       color: 'bg-blue-500',
       permission: 'reports.export'
@@ -94,28 +85,8 @@ const Reports = () => {
       icon: ExclamationTriangleIcon,
       color: 'bg-orange-500',
       permission: 'reports.export'
-    },
-    {
-      id: 'maintenance',
-      title: 'Maintenance Report',
-      description: 'Maintenance history and scheduled maintenance for all vehicles.',
-      icon: WrenchScrewdriverIcon,
-      color: 'bg-green-500',
-      permission: 'reports.export'
     }
   ];
-
-  if (!hasPermission('reports.view')) {
-    return (
-      <div className="p-6">
-        <div className="text-center py-12">
-          <ExclamationTriangleIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Access Denied</h3>
-          <p className="text-gray-500">You do not have permission to view reports.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6">
@@ -211,18 +182,17 @@ const Reports = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {reportCards.map((report) => {
-              const canDownload = hasPermission(report.permission);
               const IconComponent = report.icon;
               
               return (
                 <div
                   key={report.id}
                   className={`border rounded-lg p-6 transition-all duration-200 ${
-                    canDownload 
+                    true 
                       ? 'border-gray-200 hover:border-gray-300 hover:shadow-md cursor-pointer' 
                       : 'border-gray-100 opacity-60 cursor-not-allowed'
                   }`}
-                  onClick={() => canDownload && !loading && handleDownloadReport(report.id)}
+                  onClick={() => true && !loading && handleDownloadReport(report.id)}
                 >
                   <div className="flex items-start">
                     <div className={`p-3 rounded-lg ${report.color} flex-shrink-0`}>
@@ -236,12 +206,10 @@ const Reports = () => {
                         {report.description}
                       </p>
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${
-                          canDownload ? 'text-blue-600' : 'text-gray-400'
-                        }`}>
-                          {canDownload ? 'Click to download' : 'No permission'}
+                        <span className="text-sm font-medium text-blue-600">
+                          Click to download
                         </span>
-                        {canDownload && (
+                        {true && (
                           <DocumentArrowDownIcon className="h-5 w-5 text-blue-600" />
                         )}
                       </div>

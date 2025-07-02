@@ -139,79 +139,6 @@ export const vehicleService = {
   }
 };
 
-export const maintenanceService = {
-  // Get all maintenance records
-  getAllMaintenance: async (params = {}) => {
-    try {
-      const response = await api.get('/maintenance', { params });
-      return {
-        success: true,
-        data: response.data.data || response.data
-      };
-    } catch (error) {
-      console.error('Error fetching maintenance records:', error);
-      throw error;
-    }
-  },
-
-  // Get maintenance by vehicle ID
-  getMaintenanceByVehicleId: async (vehicleId) => {
-    try {
-      const response = await api.get(`/maintenance/vehicle/${vehicleId}`);
-      return {
-        success: true,
-        data: response.data.data || response.data
-      };
-    } catch (error) {
-      console.error('Error fetching vehicle maintenance:', error);
-      throw error;
-    }
-  },
-
-  // Create maintenance record
-  createMaintenance: async (maintenanceData) => {
-    try {
-      const response = await api.post('/maintenance', maintenanceData);
-      return {
-        success: true,
-        data: response.data.data || response.data,
-        message: 'Maintenance record created successfully'
-      };
-    } catch (error) {
-      console.error('Error creating maintenance record:', error);
-      throw error;
-    }
-  },
-
-  // Update maintenance record
-  updateMaintenance: async (id, maintenanceData) => {
-    try {
-      const response = await api.put(`/maintenance/${id}`, maintenanceData);
-      return {
-        success: true,
-        data: response.data.data || response.data,
-        message: 'Maintenance record updated successfully'
-      };
-    } catch (error) {
-      console.error('Error updating maintenance record:', error);
-      throw error;
-    }
-  },
-
-  // Delete maintenance record
-  deleteMaintenance: async (id) => {
-    try {
-      await api.delete(`/maintenance/${id}`);
-      return {
-        success: true,
-        message: 'Maintenance record deleted successfully'
-      };
-    } catch (error) {
-      console.error('Error deleting maintenance record:', error);
-      throw error;
-    }
-  }
-};
 
 export const userService = {
   // Get all users
@@ -258,5 +185,5 @@ export const userService = {
   }
 };
 
-const services = { vehicleService, maintenanceService, userService };
+const services = { vehicleService, userService };
 export default services;

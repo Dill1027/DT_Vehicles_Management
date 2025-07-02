@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/SimpleAuthContext';
 import { vehicleService } from '../services/vehicleService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { 
   ArrowLeftIcon, 
   PencilIcon, 
-  TrashIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 const VehicleDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { hasPermission } = useAuth();
   
   const [vehicle, setVehicle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,11 +35,6 @@ const VehicleDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (!hasPermission('vehicles.delete')) {
-      toast.error('You do not have permission to delete vehicles');
-      return;
-    }
-
     if (window.confirm('Are you sure you want to delete this vehicle? This action cannot be undone.')) {
       try {
         await vehicleService.deleteVehicle(id);
@@ -64,19 +55,12 @@ const VehicleDetail = () => {
       case 'in-use':
       case 'in use':
         return 'bg-blue-100 text-blue-800';
-      case 'maintenance':
-      case 'in maintenance':
-        return 'bg-orange-100 text-orange-800';
       case 'inactive':
       case 'retired':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const isInMaintenance = () => {
-    return vehicle?.status?.toLowerCase().includes('maintenance');
   };
 
   if (loading) {
@@ -119,7 +103,7 @@ const VehicleDetail = () => {
         </div>
         
         <div className="flex gap-2">
-          {hasPermission('vehicles.edit') && (
+          { (
             <Link
               to={`/vehicles/${id}/edit`}
               className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
@@ -128,7 +112,7 @@ const VehicleDetail = () => {
               Edit
             </Link>
           )}
-          {hasPermission('vehicles.delete') && (
+          { (
             <button
               onClick={handleDelete}
               className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-600 rounded-md hover:bg-red-50"
@@ -159,40 +143,13 @@ const VehicleDetail = () => {
             )}
           </div>
           
-          {/* Status and Maintenance Info */}
+          {/* Status Info */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Current Status</span>
               <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(vehicle.status)}`}>
                 {vehicle.status?.charAt(0).toUpperCase() + vehicle.status?.slice(1) || 'Unknown'}
               </span>
-            </div>
-            
-            {/* Maintenance Status */}
-            <div className="border-t pt-6">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-gray-700">Maintenance Status</span>
-                <div className="flex items-center gap-2">
-                  {isInMaintenance() ? (
-                    <>
-                      <ExclamationTriangleIcon className="h-5 w-5 text-orange-500" />
-                      <span className="text-orange-600 font-medium">In Maintenance</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                      <span className="text-green-600 font-medium">Operational</span>
-                    </>
-                  )}
-                </div>
-              </div>
-              
-              <div className={`p-4 rounded-lg text-sm ${isInMaintenance() ? 'bg-orange-50 text-orange-800' : 'bg-green-50 text-green-800'}`}>
-                {isInMaintenance() 
-                  ? 'This vehicle is currently undergoing maintenance and is not available for use.'
-                  : 'This vehicle is operational and available for use.'
-                }
-              </div>
             </div>
           </div>
         </div>

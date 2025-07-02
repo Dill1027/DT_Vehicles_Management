@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Vehicle = require('../models/Vehicle');
-const { authenticate, authorize, canViewReports, canExportReports, canModifyVehicles } = require('../middleware/auth');
 
-// Get all vehicles (requires authentication and vehicles.view permission)
-router.get('/', authenticate, authorize('vehicles.view'), async (req, res) => {
+// Get all vehicles (no authentication required)
+router.get('/', async (req, res) => {
   try {
     const vehicles = await Vehicle.find();
     res.json({
@@ -21,7 +20,7 @@ router.get('/', authenticate, authorize('vehicles.view'), async (req, res) => {
 });
 
 // Get vehicle statistics (move this before /:id route)
-router.get('/stats', authenticate, authorize('vehicles.view'), async (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
     const total = await Vehicle.countDocuments();
     const statusStats = await Vehicle.aggregate([
@@ -79,7 +78,7 @@ router.get('/stats', authenticate, authorize('vehicles.view'), async (req, res) 
 });
 
 // Add missing expiring vehicles endpoint
-router.get('/expiring', authenticate, authorize('vehicles.view'), async (req, res) => {
+router.get('/expiring', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
     const vehicles = await Vehicle.getExpiringVehicles(days);
@@ -109,7 +108,7 @@ router.get('/expiring', authenticate, authorize('vehicles.view'), async (req, re
 });
 
 // Add missing expired vehicles endpoint
-router.get('/expired', authenticate, authorize('vehicles.view'), async (req, res) => {
+router.get('/expired', async (req, res) => {
   try {
     const vehicles = await Vehicle.getExpiredVehicles();
     
@@ -134,8 +133,8 @@ router.get('/expired', authenticate, authorize('vehicles.view'), async (req, res
   }
 });
 
-// Get vehicle by ID (requires authentication and vehicles.view permission)
-router.get('/:id', authenticate, authorize('vehicles.view'), async (req, res) => {
+// Get vehicle by ID (no authentication required)
+router.get('/:id', async (req, res) => {
   try {
     const vehicle = await Vehicle.findById(req.params.id);
     if (!vehicle) {
@@ -157,8 +156,8 @@ router.get('/:id', authenticate, authorize('vehicles.view'), async (req, res) =>
   }
 });
 
-// Create new vehicle (requires authentication and vehicles.create permission)
-router.post('/', authenticate, authorize('vehicles.create'), async (req, res) => {
+// Create new vehicle (no authentication required)
+router.post('/', async (req, res) => {
   try {
     const vehicle = new Vehicle(req.body);
     await vehicle.save();
@@ -183,8 +182,8 @@ router.post('/', authenticate, authorize('vehicles.create'), async (req, res) =>
   }
 });
 
-// Update vehicle (add missing authentication)
-router.put('/:id', authenticate, authorize('vehicles.edit'), async (req, res) => {
+// Update vehicle (no authentication required)
+router.put('/:id', async (req, res) => {
   try {
     const updated = await Vehicle.findByIdAndUpdate(
       req.params.id, 
@@ -218,8 +217,8 @@ router.put('/:id', authenticate, authorize('vehicles.edit'), async (req, res) =>
   }
 });
 
-// Delete vehicle (add missing authentication)
-router.delete('/:id', authenticate, authorize('vehicles.delete'), async (req, res) => {
+// Delete vehicle (no authentication required)
+router.delete('/:id', async (req, res) => {
   try {
     const deleted = await Vehicle.findByIdAndDelete(req.params.id);
     if (!deleted) {
@@ -303,8 +302,8 @@ router.post('/reports/monthly', async (req, res) => {
   }
 });
 
-// Generate PDF reports (requires authentication and reports export permission)
-router.get('/reports/pdf/summary', authenticate, canExportReports, async (req, res) => {
+// Generate PDF reports (no authentication required)
+router.get('/reports/pdf/summary', async (req, res) => {
   try {
     const vehicles = await Vehicle.find({});
     const PDFReportGenerator = require('../utils/pdfGenerator');
@@ -324,7 +323,7 @@ router.get('/reports/pdf/summary', authenticate, canExportReports, async (req, r
   }
 });
 
-router.get('/reports/pdf/expiry-alerts', authenticate, canExportReports, async (req, res) => {
+router.get('/reports/pdf/expiry-alerts', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
     const vehicles = await Vehicle.getExpiringVehicles(days);
@@ -345,7 +344,7 @@ router.get('/reports/pdf/expiry-alerts', authenticate, canExportReports, async (
   }
 });
 
-router.get('/reports/pdf/maintenance', authenticate, canExportReports, async (req, res) => {
+router.get('/reports/pdf/maintenance', async (req, res) => {
   try {
     const vehicles = await Vehicle.find({});
     const PDFReportGenerator = require('../utils/pdfGenerator');

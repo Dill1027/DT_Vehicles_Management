@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/SimpleAuthContext';
 import { vehicleService } from '../services/vehicleService';
 import notificationService from '../services/notificationService';
 import reportService from '../services/reportService';
@@ -22,12 +21,9 @@ const Dashboard = () => {
     total: 0,
     available: 0,
     inUse: 0,
-    maintenance: 0,
     insuranceExpiring: 0,
     insuranceExpired: 0
   });
-
-  const { user, hasPermission } = useAuth();
 
   useEffect(() => {
     fetchDashboardData();
@@ -70,7 +66,6 @@ const Dashboard = () => {
         total: statsData.total || 0,
         available: statsData.available || 0,
         inUse: statsData.inUse || 0,
-        maintenance: statsData.maintenance || 0,
         insuranceExpiring: expiringInsurance.length,
         insuranceExpired: expiredInsurance.length
       });
@@ -115,8 +110,6 @@ const Dashboard = () => {
         return 'bg-green-100 text-green-800';
       case 'in-use':
         return 'bg-yellow-100 text-yellow-800';
-      case 'maintenance':
-        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -143,29 +136,27 @@ const Dashboard = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Welcome, {user?.firstName}!
+            Welcome to Vehicle Management!
           </h1>
           <p className="text-gray-600">Deep Tec Engineering Vehicle Management Dashboard</p>
         </div>
         
-        {hasPermission('reports.export') && (
-          <div className="flex space-x-2">
-            <button
-              onClick={() => handleDownloadReport('summary')}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-              Vehicle Report
-            </button>
-            <button
-              onClick={() => handleDownloadReport('expiry')}
-              className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-            >
-              <ClockIcon className="h-5 w-5 mr-2" />
-              Expiry Report
-            </button>
-          </div>
-        )}
+        <div className="flex space-x-2">
+          <button
+            onClick={() => handleDownloadReport('summary')}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
+            Vehicle Report
+          </button>
+          <button
+            onClick={() => handleDownloadReport('expiry')}
+            className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            <ClockIcon className="h-5 w-5 mr-2" />
+            Expiry Report
+          </button>
+        </div>
       </div>
 
       {/* Alert Cards */}
@@ -235,18 +226,6 @@ const Dashboard = () => {
             <div>
               <h3 className="text-sm font-medium text-gray-500">In Use</h3>
               <p className="text-2xl font-bold text-yellow-600">{stats.inUse}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex items-center">
-            <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
-              <div className="h-4 w-4 bg-red-600 rounded-full"></div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Maintenance</h3>
-              <p className="text-2xl font-bold text-red-600">{stats.maintenance}</p>
             </div>
           </div>
         </div>

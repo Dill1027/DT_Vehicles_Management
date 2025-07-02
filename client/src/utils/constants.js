@@ -51,7 +51,6 @@ export const DATE_FORMATS = {
 
 // Local Storage Keys
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'token',
   USER_PREFERENCES: 'userPreferences',
   RECENT_SEARCHES: 'recentSearches'
 };
@@ -100,7 +99,6 @@ export const VALIDATION = {
 // Error Messages
 export const ERROR_MESSAGES = {
   NETWORK_ERROR: 'Network error. Please check your connection.',
-  UNAUTHORIZED: 'You are not authorized to perform this action.',
   FORBIDDEN: 'Access denied.',
   NOT_FOUND: 'The requested resource was not found.',
   SERVER_ERROR: 'Server error. Please try again later.',

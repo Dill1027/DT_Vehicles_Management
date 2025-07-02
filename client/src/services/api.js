@@ -44,22 +44,14 @@ const tryAlternatePort = async (config) => {
   }
 };
 
-// Request interceptor to add auth token
+// Request interceptor (no authentication required)
 api.interceptors.request.use(
   (config) => {
-    // Don't add auth headers for login/register requests
-    if (config.url?.includes('/auth/login') || config.url?.includes('/auth/register')) {
-      return config;
-    }
-    
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // No authentication headers needed
     return config;
   },
   (error) => {
-    return Promise.reject(error);
+    return Promise.reject(new Error(error));
   }
 );
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/SimpleAuthContext';
 import { vehicleService } from '../services/vehicleService';
 import VehicleCard from '../components/VehicleCard';
 import VehicleModal from '../components/VehicleModal';
@@ -20,7 +19,6 @@ const Vehicles = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalVehicles, setTotalVehicles] = useState(0);
 
-  const { hasPermission } = useAuth();
   const navigate = useNavigate();
 
   const vehiclesPerPage = 12;
@@ -68,11 +66,6 @@ const Vehicles = () => {
   };
 
   const handleDelete = async (vehicleId) => {
-    if (!hasPermission('vehicles.delete')) {
-      toast.error('You do not have permission to delete vehicles');
-      return;
-    }
-
     if (window.confirm('Are you sure you want to delete this vehicle?')) {
       try {
         await vehicleService.deleteVehicle(vehicleId);
@@ -86,10 +79,6 @@ const Vehicles = () => {
   };
 
   const handleEdit = (vehicle) => {
-    if (!hasPermission('vehicles.edit')) {
-      toast.error('You do not have permission to edit vehicles');
-      return;
-    }
     setSelectedVehicle(vehicle);
     setShowModal(true);
   };
@@ -218,8 +207,6 @@ const Vehicles = () => {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onView={handleView}
-                    canEdit={hasPermission('vehicles.edit')}
-                    canDelete={hasPermission('vehicles.delete')}
                   />
                 ))}
               </div>
@@ -278,15 +265,13 @@ const Vehicles = () => {
                   : 'Get started by adding your first vehicle.'
                 }
               </p>
-              {(hasPermission('vehicles.create') || hasPermission('admin') || !hasPermission) && (
-                <Link
-                  to="/vehicles/add"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add Vehicle
-                </Link>
-              )}
+              <Link
+                to="/vehicles/add"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Add Vehicle
+              </Link>
             </div>
           )}
         </>

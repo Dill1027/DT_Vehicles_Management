@@ -1,7 +1,7 @@
 import React from 'react';
 import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
-const VehicleCard = ({ vehicle, onEdit, onDelete, onView, canEdit = true, canDelete = true }) => {
+const VehicleCard = ({ vehicle, onEdit, onDelete, onView }) => {
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'active':
@@ -104,7 +104,7 @@ const VehicleCard = ({ vehicle, onEdit, onDelete, onView, canEdit = true, canDel
             View
           </button>
           
-          {canEdit && (
+          { (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -117,7 +117,7 @@ const VehicleCard = ({ vehicle, onEdit, onDelete, onView, canEdit = true, canDel
             </button>
           )}
           
-          {canDelete && (
+          { (
             <button
               onClick={(e) => {
                 e.stopPropagation();

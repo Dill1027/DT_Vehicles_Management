@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   HomeIcon, 
   TruckIcon, 
+  WrenchScrewdriverIcon, 
   DocumentTextIcon,
   Bars3Icon,
   XMarkIcon
@@ -22,6 +23,11 @@ const Navigation = () => {
       path: '/vehicles', 
       label: 'Vehicles', 
       icon: TruckIcon
+    },
+    { 
+      path: '/maintenance', 
+      label: 'Maintenance', 
+      icon: WrenchScrewdriverIcon
     },
     { 
       path: '/reports', 

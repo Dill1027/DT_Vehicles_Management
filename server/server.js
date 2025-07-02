@@ -7,9 +7,6 @@ require('dotenv').config();
 const path = require('path');
 
 const vehicleRoutes = require('./routes/vehicleRoutes');
-const userRoutes = require('./routes/userRoutes');
-const authRoutes = require('./routes/authRoutes');
-const maintenanceRoutes = require('./routes/maintenanceRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
@@ -82,9 +79,6 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/vehicles', vehicleRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // Health check endpoint
