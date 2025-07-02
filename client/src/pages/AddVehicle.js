@@ -177,19 +177,61 @@ const AddVehicle = () => {
                 }`}
               >
                 <option value="">Select vehicle make</option>
-                <option value="BMW">BMW</option>
-                <option value="Mercedes-Benz">Mercedes-Benz</option>
-                <option value="Toyota">Toyota</option>
-                <option value="Ford">Ford</option>
-                <option value="Volkswagen">Volkswagen</option>
-                <option value="Honda">Honda</option>
-                <option value="Nissan">Nissan</option>
-                <option value="Audi">Audi</option>
-                <option value="Hyundai">Hyundai</option>
-                <option value="Kia">Kia</option>
-                <option value="Mazda">Mazda</option>
-                <option value="Subaru">Subaru</option>
-                <option value="Volvo">Volvo</option>
+                
+                {/* Car Brands */}
+                <optgroup label="Car Brands">
+                  <option value="BMW">BMW</option>
+                  <option value="Mercedes-Benz">Mercedes-Benz</option>
+                  <option value="Toyota">Toyota</option>
+                  <option value="Ford">Ford</option>
+                  <option value="Volkswagen">Volkswagen</option>
+                  <option value="Honda">Honda</option>
+                  <option value="Nissan">Nissan</option>
+                  <option value="Audi">Audi</option>
+                  <option value="Hyundai">Hyundai</option>
+                  <option value="Kia">Kia</option>
+                  <option value="Mazda">Mazda</option>
+                  <option value="Subaru">Subaru</option>
+                  <option value="Volvo">Volvo</option>
+                  <option value="Suzuki">Suzuki</option>
+                  <option value="Mitsubishi">Mitsubishi</option>
+                  <option value="Peugeot">Peugeot</option>
+                  <option value="Renault">Renault</option>
+                </optgroup>
+
+                {/* Motorcycle Brands */}
+                <optgroup label="Motorcycle Brands">
+                  <option value="Bajaj">Bajaj</option>
+                  <option value="Hero">Hero</option>
+                  <option value="TVS">TVS</option>
+                  <option value="Royal Enfield">Royal Enfield</option>
+                  <option value="Yamaha">Yamaha</option>
+                  <option value="Kawasaki">Kawasaki</option>
+                  <option value="Suzuki">Suzuki</option>
+                  <option value="KTM">KTM</option>
+                  <option value="Ducati">Ducati</option>
+                  <option value="Harley-Davidson">Harley-Davidson</option>
+                  <option value="Triumph">Triumph</option>
+                  <option value="Indian">Indian</option>
+                  <option value="Aprilia">Aprilia</option>
+                  <option value="Benelli">Benelli</option>
+                  <option value="CFMoto">CFMoto</option>
+                </optgroup>
+
+                {/* Commercial Vehicle Brands */}
+                <optgroup label="Commercial Vehicle Brands">
+                  <option value="Tata">Tata</option>
+                  <option value="Ashok Leyland">Ashok Leyland</option>
+                  <option value="Mahindra">Mahindra</option>
+                  <option value="Eicher">Eicher</option>
+                  <option value="Force Motors">Force Motors</option>
+                  <option value="Isuzu">Isuzu</option>
+                  <option value="Mercedes-Benz Commercial">Mercedes-Benz Commercial</option>
+                  <option value="Volvo Trucks">Volvo Trucks</option>
+                  <option value="MAN">MAN</option>
+                  <option value="Scania">Scania</option>
+                </optgroup>
+
                 <option value="Other">Other</option>
               </select>
               {errors.make && <p className="mt-1 text-sm text-red-600">{errors.make}</p>}
