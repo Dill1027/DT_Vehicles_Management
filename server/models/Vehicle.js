@@ -16,8 +16,8 @@ const vehicleSchema = new mongoose.Schema({
   },
   model: {
     type: String,
-    required: [true, 'Model is required'],
-    trim: true
+    trim: true,
+    default: 'Unknown'
   },
   modelMake: { 
     type: String, 
@@ -38,7 +38,6 @@ const vehicleSchema = new mongoose.Schema({
   // Deep Tec Engineering specific fields
   department: {
     type: String,
-    required: [true, 'Department is required'],
     enum: ['Engineering', 'Operations', 'Administration', 'Sales', 'Maintenance', 'Executive'],
     default: 'Operations'
   },
@@ -55,8 +54,8 @@ const vehicleSchema = new mongoose.Schema({
   // Legal documentation (Critical for compliance)
   insuranceDetails: { 
     type: String, 
-    required: [true, 'Insurance details are required'],
-    trim: true
+    trim: true,
+    default: 'Not specified'
   },
   insuranceExpiry: {
     type: Date,

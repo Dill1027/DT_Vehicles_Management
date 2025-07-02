@@ -6,16 +6,15 @@ const AddVehicle = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     vehicleNumber: '', // Number plate (max 8 characters)
-    type: '', // Van, Lorry, Car, Bike
+    type: 'Car', // Van, Lorry, Car, Bike
     make: '', // BMW, Benz, etc.
-    insuranceDate: '',
-    insuranceExpiry: '',
+    insuranceExpiry: '', // Required field
+    revenueExpiry: '', // Required field
     imageUrl: '',
     notes: '',
     status: 'Available', // Available or In Maintenance
     fuelType: 'Petrol', // Diesel or Petrol
-    monthlyMileage: '', // Monthly mileage
-    lastMaintenanceDate: ''
+    year: new Date().getFullYear() // Add current year as default
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -64,23 +63,14 @@ const AddVehicle = () => {
     if (formData.vehicleNumber.length > 8) newErrors.vehicleNumber = 'Vehicle number plate cannot exceed 8 characters';
     if (!formData.type.trim()) newErrors.type = 'Vehicle type is required';
     if (!formData.make.trim()) newErrors.make = 'Vehicle make is required';
-    if (!formData.insuranceDate) newErrors.insuranceDate = 'Insurance date is required';
-    if (!formData.insuranceExpiry) newErrors.insuranceExpiry = 'Insurance expiry date is required';
-    
-    // Validate insurance dates
-    if (formData.insuranceDate && formData.insuranceExpiry) {
-      const startDate = new Date(formData.insuranceDate);
-      const endDate = new Date(formData.insuranceExpiry);
-      if (endDate <= startDate) {
-        newErrors.insuranceExpiry = 'Insurance expiry date must be after insurance start date';
-      }
+    if (!formData.year) newErrors.year = 'Year is required';
+    if (formData.year && (formData.year < 1900 || formData.year > new Date().getFullYear() + 1)) {
+      newErrors.year = 'Please enter a valid year';
     }
+    if (!formData.insuranceExpiry) newErrors.insuranceExpiry = 'Insurance expiry date is required';
+    if (!formData.revenueExpiry) newErrors.revenueExpiry = 'Revenue license expiry date is required';
     
     // Validate monthly mileage if provided
-    if (formData.monthlyMileage && (isNaN(formData.monthlyMileage) || formData.monthlyMileage < 0)) {
-      newErrors.monthlyMileage = 'Please enter a valid monthly mileage';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -94,13 +84,9 @@ const AddVehicle = () => {
 
     setLoading(true);
     try {
-      // Create vehicle object with proper ID generation
+      // Create vehicle object without manually setting IDs (MongoDB handles _id automatically)
       const vehicleData = {
-        ...formData,
-        id: Date.now().toString(), // Generate unique ID
-        _id: Date.now().toString(), // Ensure both id and _id are set
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        ...formData
       };
 
       await vehicleService.createVehicle(vehicleData);
@@ -164,12 +150,14 @@ const AddVehicle = () => {
                 }`}
               >
                 <option value="">Select vehicle type</option>
-                <option value="Van">Van</option>
-                <option value="Lorry">Lorry</option>
                 <option value="Car">Car</option>
-                <option value="Bike">Bike</option>
+                <option value="Van">Van</option>
                 <option value="Truck">Truck</option>
                 <option value="Bus">Bus</option>
+                <option value="Motorcycle">Motorcycle</option>
+                <option value="Pickup">Pickup</option>
+                <option value="Heavy Machinery">Heavy Machinery</option>
+                <option value="Other">Other</option>
               </select>
               {errors.type && <p className="mt-1 text-sm text-red-600">{errors.type}</p>}
             </div>
@@ -207,6 +195,27 @@ const AddVehicle = () => {
               {errors.make && <p className="mt-1 text-sm text-red-600">{errors.make}</p>}
             </div>
 
+            {/* Year */}
+            <div>
+              <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-2">
+                Year *
+              </label>
+              <input
+                type="number"
+                id="year"
+                name="year"
+                value={formData.year}
+                onChange={handleChange}
+                min="1900"
+                max={new Date().getFullYear() + 1}
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.year ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter vehicle year"
+              />
+              {errors.year && <p className="mt-1 text-sm text-red-600">{errors.year}</p>}
+            </div>
+
             {/* Fuel Type */}
             <div>
               <label htmlFor="fuelType" className="block text-sm font-medium text-gray-700 mb-2">
@@ -222,24 +231,6 @@ const AddVehicle = () => {
                 <option value="Petrol">Petrol</option>
                 <option value="Diesel">Diesel</option>
               </select>
-            </div>
-
-            {/* Insurance Date */}
-            <div>
-              <label htmlFor="insuranceDate" className="block text-sm font-medium text-gray-700 mb-2">
-                Insurance Date *
-              </label>
-              <input
-                type="date"
-                id="insuranceDate"
-                name="insuranceDate"
-                value={formData.insuranceDate}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.insuranceDate ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.insuranceDate && <p className="mt-1 text-sm text-red-600">{errors.insuranceDate}</p>}
             </div>
 
             {/* Insurance Expiry */}
@@ -260,6 +251,24 @@ const AddVehicle = () => {
               {errors.insuranceExpiry && <p className="mt-1 text-sm text-red-600">{errors.insuranceExpiry}</p>}
             </div>
 
+            {/* Revenue License Expiry */}
+            <div>
+              <label htmlFor="revenueExpiry" className="block text-sm font-medium text-gray-700 mb-2">
+                Revenue License Expiry *
+              </label>
+              <input
+                type="date"
+                id="revenueExpiry"
+                name="revenueExpiry"
+                value={formData.revenueExpiry}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.revenueExpiry ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {errors.revenueExpiry && <p className="mt-1 text-sm text-red-600">{errors.revenueExpiry}</p>}
+            </div>
+
             {/* Status */}
             <div>
               <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
@@ -275,26 +284,6 @@ const AddVehicle = () => {
                 <option value="Available">Available</option>
                 <option value="In Maintenance">In Maintenance</option>
               </select>
-            </div>
-
-            {/* Monthly Mileage */}
-            <div>
-              <label htmlFor="monthlyMileage" className="block text-sm font-medium text-gray-700 mb-2">
-                Monthly Mileage (km)
-              </label>
-              <input
-                type="number"
-                id="monthlyMileage"
-                name="monthlyMileage"
-                value={formData.monthlyMileage}
-                onChange={handleChange}
-                min="0"
-                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.monthlyMileage ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter monthly mileage"
-              />
-              {errors.monthlyMileage && <p className="mt-1 text-sm text-red-600">{errors.monthlyMileage}</p>}
             </div>
 
             {/* Last Maintenance Date */}
