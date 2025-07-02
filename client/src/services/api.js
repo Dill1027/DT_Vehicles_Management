@@ -3,9 +3,12 @@ import { toast } from 'react-hot-toast';
 
 // Determine if we're in development mode
 const isDev = process.env.NODE_ENV === 'development';
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-// Set up API base URL with fallback options for development
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+// Set up API base URL with automatic environment detection
+const API_BASE_URL = process.env.REACT_APP_API_URL || 
+                     (isDev || isLocalhost ? 'http://localhost:5001/api' : 
+                      'https://dt-vehicles-backend.onrender.com/api'); // Update this URL after deployment
 
 // Create axios instance with configurations
 const api = axios.create({
