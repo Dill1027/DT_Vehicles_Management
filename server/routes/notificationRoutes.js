@@ -148,4 +148,184 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// Get vehicles with expiring documents (insurance, emission, revenue)
+router.get('/expiring', async (req, res) => {
+  try {
+    const Vehicle = require('../models/Vehicle');
+    const days = parseInt(req.query.days) || 30;
+    const currentDate = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(currentDate.getDate() + days);
+
+    const vehicles = await Vehicle.find({
+      $or: [
+        {
+          insuranceExpiry: {
+            $gte: currentDate,
+            $lte: futureDate
+          }
+        },
+        {
+          emissionExpiry: {
+            $gte: currentDate,
+            $lte: futureDate
+          }
+        },
+        {
+          revenueExpiry: {
+            $gte: currentDate,
+            $lte: futureDate
+          }
+        }
+      ]
+    }).select('vehicleNumber make model insuranceExpiry emissionExpiry revenueExpiry');
+
+    // Process vehicles to determine which documents are expiring
+    const expiringVehicles = vehicles.map(vehicle => {
+      const expiringDocs = [];
+      const vObj = vehicle.toObject();
+      
+      if (vehicle.insuranceExpiry && vehicle.insuranceExpiry <= futureDate && vehicle.insuranceExpiry >= currentDate) {
+        expiringDocs.push({
+          type: 'insurance',
+          expiryDate: vehicle.insuranceExpiry,
+          daysUntilExpiry: Math.ceil((new Date(vehicle.insuranceExpiry) - currentDate) / (1000 * 60 * 60 * 24))
+        });
+      }
+      
+      if (vehicle.emissionExpiry && vehicle.emissionExpiry <= futureDate && vehicle.emissionExpiry >= currentDate) {
+        expiringDocs.push({
+          type: 'emission',
+          expiryDate: vehicle.emissionExpiry,
+          daysUntilExpiry: Math.ceil((new Date(vehicle.emissionExpiry) - currentDate) / (1000 * 60 * 60 * 24))
+        });
+      }
+      
+      if (vehicle.revenueExpiry && vehicle.revenueExpiry <= futureDate && vehicle.revenueExpiry >= currentDate) {
+        expiringDocs.push({
+          type: 'revenue',
+          expiryDate: vehicle.revenueExpiry,
+          daysUntilExpiry: Math.ceil((new Date(vehicle.revenueExpiry) - currentDate) / (1000 * 60 * 60 * 24))
+        });
+      }
+
+      return {
+        ...vObj,
+        expiringDocuments: expiringDocs
+      };
+    }).filter(vehicle => vehicle.expiringDocuments.length > 0);
+
+    res.json({
+      success: true,
+      data: expiringVehicles
+    });
+  } catch (error) {
+    console.error('Get expiring documents error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching expiring documents',
+      error: error.message
+    });
+  }
+});
+
+// Get vehicles with expired documents
+router.get('/expired', async (req, res) => {
+  try {
+    const Vehicle = require('../models/Vehicle');
+    const currentDate = new Date();
+
+    const vehicles = await Vehicle.find({
+      $or: [
+        { insuranceExpiry: { $lt: currentDate } },
+        { emissionExpiry: { $lt: currentDate } },
+        { revenueExpiry: { $lt: currentDate } }
+      ]
+    }).select('vehicleNumber make model insuranceExpiry emissionExpiry revenueExpiry');
+
+    // Process vehicles to determine which documents are expired
+    const expiredVehicles = vehicles.map(vehicle => {
+      const expiredDocs = [];
+      const vObj = vehicle.toObject();
+      
+      if (vehicle.insuranceExpiry && vehicle.insuranceExpiry < currentDate) {
+        expiredDocs.push({
+          type: 'insurance',
+          expiryDate: vehicle.insuranceExpiry,
+          daysOverdue: Math.ceil((currentDate - new Date(vehicle.insuranceExpiry)) / (1000 * 60 * 60 * 24))
+        });
+      }
+      
+      if (vehicle.emissionExpiry && vehicle.emissionExpiry < currentDate) {
+        expiredDocs.push({
+          type: 'emission',
+          expiryDate: vehicle.emissionExpiry,
+          daysOverdue: Math.ceil((currentDate - new Date(vehicle.emissionExpiry)) / (1000 * 60 * 60 * 24))
+        });
+      }
+      
+      if (vehicle.revenueExpiry && vehicle.revenueExpiry < currentDate) {
+        expiredDocs.push({
+          type: 'revenue',
+          expiryDate: vehicle.revenueExpiry,
+          daysOverdue: Math.ceil((currentDate - new Date(vehicle.revenueExpiry)) / (1000 * 60 * 60 * 24))
+        });
+      }
+
+      return {
+        ...vObj,
+        expiredDocuments: expiredDocs
+      };
+    }).filter(vehicle => vehicle.expiredDocuments.length > 0);
+
+    res.json({
+      success: true,
+      data: expiredVehicles
+    });
+  } catch (error) {
+    console.error('Get expired documents error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching expired documents',
+      error: error.message
+    });
+  }
+});
+
+// Get vehicles with expiring insurance
+router.get('/insurance-expiry', async (req, res) => {
+  try {
+    const Vehicle = require('../models/Vehicle');
+    const days = parseInt(req.query.days) || 30;
+    const currentDate = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(currentDate.getDate() + days);
+
+    const vehicles = await Vehicle.find({
+      insuranceExpiry: {
+        $gte: currentDate,
+        $lte: futureDate
+      }
+    }).select('vehicleNumber make model insuranceExpiry');
+
+    // Calculate days until expiry for each vehicle
+    const alertsWithDays = vehicles.map(vehicle => ({
+      ...vehicle.toObject(),
+      daysUntilExpiry: Math.ceil((new Date(vehicle.insuranceExpiry) - currentDate) / (1000 * 60 * 60 * 24))
+    }));
+
+    res.json({
+      success: true,
+      data: alertsWithDays
+    });
+  } catch (error) {
+    console.error('Get insurance expiry alerts error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching insurance expiry alerts',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
