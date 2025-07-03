@@ -10,6 +10,14 @@ const API_BASE_URL = process.env.REACT_APP_API_URL ||
                      (isDev || isLocalhost ? 'http://localhost:5001/api' : 
                       'https://dt-vehicles-management.vercel.app/api'); // Updated for Vercel deployment
 
+// Debug logging
+console.log('🔗 API Configuration:', {
+  isDev,
+  isLocalhost,
+  baseURL: API_BASE_URL,
+  environment: process.env.NODE_ENV
+});
+
 // Create axios instance with configurations
 const api = axios.create({
   baseURL: API_BASE_URL,
