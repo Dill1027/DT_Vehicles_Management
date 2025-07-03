@@ -8,7 +8,7 @@ const isLocalhost = window.location.hostname === 'localhost' || window.location.
 // Set up API base URL with automatic environment detection
 const API_BASE_URL = process.env.REACT_APP_API_URL || 
                      (isDev || isLocalhost ? 'http://localhost:5001/api' : 
-                      'https://dt-vehicles-backend.vercel.app/api'); // Update this URL after Vercel deployment
+                      'https://dt-vehicles-management.vercel.app/api'); // Updated for Vercel deployment
 
 // Create axios instance with configurations
 const api = axios.create({
