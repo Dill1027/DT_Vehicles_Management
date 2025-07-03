@@ -105,9 +105,11 @@ export const mockVehicleService = {
     const vehicles = JSON.parse(localStorage.getItem(STORAGE_KEYS.VEHICLES) || '[]');
     const stats = {
       total: vehicles.length,
-      available: vehicles.filter(v => v.status === 'available').length,
-      inUse: vehicles.filter(v => v.status === 'in-use').length,
-      maintenance: vehicles.filter(v => v.status === 'maintenance').length
+      active: vehicles.filter(v => v.status === 'Active').length,
+      inService: vehicles.filter(v => v.status === 'In Service').length,
+      outOfService: vehicles.filter(v => v.status === 'Out of Service').length,
+      retired: vehicles.filter(v => v.status === 'Retired').length,
+      pending: vehicles.filter(v => v.status === 'Pending').length
     };
     return { success: true, data: stats };
   },

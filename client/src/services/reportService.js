@@ -22,8 +22,8 @@ const reportService = {
       
       reportService.generateMockPDF('Vehicle Summary Report', {
         totalVehicles: vehicles.length,
-        availableVehicles: vehicles.filter(v => v.status === 'available').length,
-        inUseVehicles: vehicles.filter(v => v.status === 'in-use').length,
+        availableVehicles: vehicles.filter(v => v.status === 'Active').length,
+        inUseVehicles: vehicles.filter(v => v.status === 'In Service').length,
         inUse: vehicles.filter(v => v.status === 'In Service').length,
         vehicles: vehicles.map(v => ({
           vehicleId: v.vehicleId,
@@ -105,9 +105,11 @@ const reportService = {
           reportsGenerated: 42,
           lastReportDate: new Date().toISOString(),
           vehiclesByStatus: {
-            available: vehicles.filter(v => v.status === 'available').length,
-            'in-use': vehicles.filter(v => v.status === 'in-use').length,
-            inUse: vehicles.filter(v => v.status === 'In Service').length
+            active: vehicles.filter(v => v.status === 'Active').length,
+            'in-service': vehicles.filter(v => v.status === 'In Service').length,
+            'out-of-service': vehicles.filter(v => v.status === 'Out of Service').length,
+            retired: vehicles.filter(v => v.status === 'Retired').length,
+            pending: vehicles.filter(v => v.status === 'Pending').length
           }
         }
       };
