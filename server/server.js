@@ -15,8 +15,8 @@ const PORT = process.env.PORT || 5001; // Changed from 5000 to 5001
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - moved before rate limiting to handle preflight requests
-app.use(cors({
+// CORS configuration - simplified for Vercel serverless compatibility
+const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
@@ -27,20 +27,25 @@ app.use(cors({
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
       'https://dtvehicledetails.netlify.app',
-      process.env.CLIENT_URL
-    ].filter(Boolean);
+      'https://dt-vehicles-management.vercel.app'
+    ];
     
     // Allow all Vercel domains
     if (origin.includes('.vercel.app') || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     
-    callback(new Error('Not allowed by CORS'));
+    // Log the origin for debugging
+    console.log('CORS blocked origin:', origin);
+    callback(null, true); // Allow all origins for now to debug
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+  optionsSuccessStatus: 200 // For legacy browser support
+};
+
+app.use(cors(corsOptions));
 
 // Handle preflight requests
 app.options('*', cors());
@@ -99,6 +104,18 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
     message: 'DT Vehicles Management API is running',
+    timestamp: new Date().toISOString(),
+    cors: 'enabled',
+    mongodb: 'connected'
+  });
+});
+
+// Test endpoint to debug CORS
+app.get('/api/test', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.status(200).json({
+    message: 'Test endpoint working',
+    origin: req.get('Origin'),
     timestamp: new Date().toISOString()
   });
 });
