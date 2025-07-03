@@ -12,7 +12,7 @@ const AddVehicle = () => {
     revenueExpiry: '', // Required field
     imageUrl: '',
     notes: '',
-    status: 'Available', // Available or In Maintenance
+    status: 'Active', // Active, In Service, Out of Service, Retired, Pending
     fuelType: 'Petrol', // Diesel or Petrol
     year: new Date().getFullYear() // Add current year as default
   });
@@ -323,8 +323,11 @@ const AddVehicle = () => {
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="Available">Available</option>
-                <option value="In Maintenance">In Maintenance</option>
+                <option value="Active">Active</option>
+                <option value="In Service">In Service</option>
+                <option value="Out of Service">Out of Service</option>
+                <option value="Retired">Retired</option>
+                <option value="Pending">Pending</option>
               </select>
             </div>
 
