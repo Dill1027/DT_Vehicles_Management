@@ -1,102 +1,90 @@
-// Serverless-compatible entry point for Vercel
+// Minimal serverless API for testing
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
-
-const vehicleRoutes = require('./routes/vehicleRoutes');
-const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 
-// Simple CORS for Vercel
+// Simple CORS
 app.use(cors({
   origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  credentials: true
 }));
 
-// Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json());
 
-// MongoDB connection with caching for serverless
+// MongoDB connection cache
 let isConnected = false;
 
 const connectDB = async () => {
-  if (isConnected) {
-    console.log('Using existing MongoDB connection');
-    return;
-  }
+  if (isConnected) return;
 
   try {
-    const mongoUri = process.env.MONGODB_URI;
-    if (!mongoUri) {
-      throw new Error('MONGODB_URI environment variable is not set');
+    const uri = process.env.MONGODB_URI;
+    if (!uri) {
+      throw new Error('MONGODB_URI not set');
     }
 
-    await mongoose.connect(mongoUri, {
+    await mongoose.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000, // 10 second timeout
-      bufferCommands: false,
-      bufferMaxEntries: 0,
+      serverSelectionTimeoutMS: 5000,
     });
 
     isConnected = true;
-    console.log('MongoDB connected successfully');
+    console.log('MongoDB connected');
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    console.error('MongoDB error:', error.message);
     throw error;
   }
 };
 
-// Middleware to ensure DB connection
-app.use(async (req, res, next) => {
+// Test endpoint
+app.get('/api/health', async (req, res) => {
   try {
     await connectDB();
-    next();
+    res.json({
+      status: 'OK',
+      message: 'API is working',
+      timestamp: new Date().toISOString(),
+      mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      env: process.env.NODE_ENV
+    });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: 'Database connection error',
-      error: error.message 
+    res.status(500).json({
+      status: 'ERROR',
+      message: error.message
     });
   }
 });
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    message: 'DT Vehicles Management API is running',
-    timestamp: new Date().toISOString(),
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-  });
+// Simple vehicles endpoint
+app.get('/api/vehicles', async (req, res) => {
+  try {
+    await connectDB();
+    
+    // Import Vehicle model here to avoid early requires
+    const Vehicle = mongoose.model('Vehicle') || require('../models/Vehicle');
+    
+    const vehicles = await Vehicle.find({}).limit(10);
+    res.json({
+      success: true,
+      data: vehicles,
+      count: vehicles.length
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
 });
 
-// Routes
-app.use('/api/vehicles', vehicleRoutes);
-app.use('/api/notifications', notificationRoutes);
-
-// 404 handler
+// Catch all
 app.use('*', (req, res) => {
   res.status(404).json({
-    success: false,
     message: `Route ${req.originalUrl} not found`
   });
 });
 
-// Error handler
-app.use((error, req, res, next) => {
-  console.error('Error:', error);
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
-  });
-});
-
-// Export for Vercel
 module.exports = app;
