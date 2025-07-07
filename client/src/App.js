@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Vehicles from './pages/Vehicles';
 import VehicleDetail from './pages/VehicleDetail';
 import AddVehicle from './pages/AddVehicle';
+import EditVehicle from './pages/EditVehicle';
 import Reports from './pages/Reports';
 
 // Clear any existing localStorage data to start fresh
@@ -37,6 +38,7 @@ function App() {
               <Route path="vehicles" element={<Vehicles />} />
               <Route path="vehicles/add" element={<AddVehicle />} />
               <Route path="vehicles/:id" element={<VehicleDetail />} />
+              <Route path="vehicles/:id/edit" element={<EditVehicle />} />
               <Route path="reports" element={<Reports />} />
             </Route>
           </Routes>

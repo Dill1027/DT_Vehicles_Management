@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { vehicleService } from '../services/vehicleService';
 import VehicleCard from '../components/VehicleCard';
 import VehicleModal from '../components/VehicleModal';
 
 const VehicleList = () => {
+  const navigate = useNavigate();
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -69,9 +70,7 @@ const VehicleList = () => {
   };
 
   const handleEdit = (vehicle) => {
-    console.log('Editing vehicle:', vehicle); // Debug log
-    setSelectedVehicle(vehicle);
-    setShowModal(true);
+    navigate(`/vehicles/${vehicle._id || vehicle.id}/edit`);
   };
 
   const handleModalClose = () => {
@@ -157,10 +156,12 @@ const VehicleList = () => {
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               >
                 <option value="all">All Status</option>
-                <option value="Available">Available</option>
-                <option value="In Maintenance">In Maintenance</option>
-                <option value="In Use">In Use</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="In Service">In Service</option>
                 <option value="Out of Service">Out of Service</option>
+                <option value="Under Maintenance">Under Maintenance</option>
+                <option value="Retired">Retired</option>
               </select>
             </div>
 

@@ -137,7 +137,15 @@ app.use('*', (req, res) => {
 });
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://prabhathdilshan2001:1234@as.gp7z1.mongodb.net/dt_petty_cash', {
+const mongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL;
+
+if (!mongoUri) {
+  console.error('❌ MONGODB_URI environment variable is not set');
+  console.log('Please set MONGODB_URI in your .env file');
+  process.exit(1);
+}
+
+mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })

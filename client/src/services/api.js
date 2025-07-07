@@ -29,6 +29,7 @@ const api = axios.create({
 
 // Track if we've already shown the server offline message
 let hasShownOfflineMessage = false;
+let offlineMessageTimeout = null;
 
 // For development - ability to switch ports if one fails
 const tryAlternatePort = async (config) => {
@@ -62,7 +63,7 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    return Promise.reject(new Error(error));
+    return Promise.reject(error instanceof Error ? error : new Error(error));
   }
 );
 
@@ -85,21 +86,16 @@ api.interceptors.response.use(
         toast.error('Server appears to be offline. Please check your connection.');
         hasShownOfflineMessage = true;
         
+        // Clear any existing timeout to prevent memory leaks
+        if (offlineMessageTimeout) {
+          clearTimeout(offlineMessageTimeout);
+        }
+        
         // Reset after 30 seconds so we can show again if issues persist
-        setTimeout(() => {
+        offlineMessageTimeout = setTimeout(() => {
           hasShownOfflineMessage = false;
+          offlineMessageTimeout = null;
         }, 30000);
-      }
-    }
-    
-    // Handle authentication issues
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      
-      // Only redirect if we're not already on the login page
-      if (!window.location.pathname.includes('/login')) {
-        toast.error('Your session has expired. Please log in again.');
-        window.location.href = '/login';
       }
     }
     
@@ -108,7 +104,7 @@ api.interceptors.response.use(
       toast.error('Server error. Our team has been notified.');
     }
     
-    return Promise.reject(error);
+    return Promise.reject(error instanceof Error ? error : new Error(error.message || 'Unknown error'));
   }
 );
 

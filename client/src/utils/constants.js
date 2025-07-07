@@ -3,31 +3,87 @@ export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5
 
 // Vehicle Status Options
 export const VEHICLE_STATUS = {
-  AVAILABLE: 'available',
-  IN_USE: 'in-use',
-  MAINTENANCE: 'maintenance'
+  ACTIVE: 'Active',
+  INACTIVE: 'Inactive',
+  IN_SERVICE: 'In Service',
+  OUT_OF_SERVICE: 'Out of Service',
+  UNDER_MAINTENANCE: 'Under Maintenance',
+  RETIRED: 'Retired'
 };
 
 export const VEHICLE_STATUS_OPTIONS = [
-  { value: VEHICLE_STATUS.AVAILABLE, label: 'Available', color: 'green' },
-  { value: VEHICLE_STATUS.IN_USE, label: 'In Use', color: 'yellow' },
-  { value: VEHICLE_STATUS.MAINTENANCE, label: 'Maintenance', color: 'red' }
+  { value: VEHICLE_STATUS.ACTIVE, label: 'Active', color: 'green' },
+  { value: VEHICLE_STATUS.INACTIVE, label: 'Inactive', color: 'red' },
+  { value: VEHICLE_STATUS.IN_SERVICE, label: 'In Service', color: 'blue' },
+  { value: VEHICLE_STATUS.OUT_OF_SERVICE, label: 'Out of Service', color: 'orange' },
+  { value: VEHICLE_STATUS.UNDER_MAINTENANCE, label: 'Under Maintenance', color: 'yellow' },
+  { value: VEHICLE_STATUS.RETIRED, label: 'Retired', color: 'gray' }
+];
+
+// Vehicle Condition Options
+export const VEHICLE_CONDITION = {
+  EXCELLENT: 'Excellent',
+  GOOD: 'Good',
+  FAIR: 'Fair',
+  POOR: 'Poor',
+  CRITICAL: 'Critical'
+};
+
+export const VEHICLE_CONDITION_OPTIONS = [
+  { value: VEHICLE_CONDITION.EXCELLENT, label: 'Excellent', color: 'green' },
+  { value: VEHICLE_CONDITION.GOOD, label: 'Good', color: 'blue' },
+  { value: VEHICLE_CONDITION.FAIR, label: 'Fair', color: 'yellow' },
+  { value: VEHICLE_CONDITION.POOR, label: 'Poor', color: 'orange' },
+  { value: VEHICLE_CONDITION.CRITICAL, label: 'Critical', color: 'red' }
+];
+
+// Vehicle Type Options
+export const VEHICLE_TYPES = [
+  'Car', 'Van', 'Truck', 'Bus', 'Motorcycle', 'Lorry', 'Heavy Machinery',
+  'Scooter', 'Electric bike (E-bike)', 'Tuk-tuk (Three-wheeler)', 'Jeep',
+  'Electric car (EV)', 'Hybrid car', 'Electric van', 'Electric bike/scooter', 'Other'
 ];
 
 // Fuel Type Options
 export const FUEL_TYPES = {
-  GASOLINE: 'gasoline',
-  DIESEL: 'diesel',
-  ELECTRIC: 'electric',
-  HYBRID: 'hybrid'
+  PETROL: 'Petrol',
+  DIESEL: 'Diesel',
+  ELECTRIC: 'Electric',
+  HYBRID: 'Hybrid',
+  CNG: 'CNG',
+  LPG: 'LPG'
 };
 
 export const FUEL_TYPE_OPTIONS = [
-  { value: FUEL_TYPES.GASOLINE, label: 'Gasoline' },
+  { value: FUEL_TYPES.PETROL, label: 'Petrol' },
   { value: FUEL_TYPES.DIESEL, label: 'Diesel' },
   { value: FUEL_TYPES.ELECTRIC, label: 'Electric' },
-  { value: FUEL_TYPES.HYBRID, label: 'Hybrid' }
+  { value: FUEL_TYPES.HYBRID, label: 'Hybrid' },
+  { value: FUEL_TYPES.CNG, label: 'CNG' },
+  { value: FUEL_TYPES.LPG, label: 'LPG' }
 ];
+
+// Vehicle Make/Brand Options
+export const VEHICLE_MAKES = {
+  CAR_BRANDS: [
+    'Toyota', 'Honda', 'Ford', 'BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen',
+    'Hyundai', 'Kia', 'Nissan', 'Mazda', 'Subaru', 'Lexus', 'Acura',
+    'Infiniti', 'Cadillac', 'Chevrolet', 'Buick', 'GMC', 'Jeep',
+    'Chrysler', 'Dodge', 'Ram', 'Lincoln', 'Volvo', 'Jaguar', 'Land Rover',
+    'Porsche', 'Ferrari', 'Lamborghini', 'Maserati', 'Bentley', 'Rolls-Royce',
+    'McLaren', 'Aston Martin', 'Bugatti', 'Koenigsegg', 'Pagani',
+    'Tesla', 'Rivian', 'Lucid Motors', 'Polestar'
+  ],
+  MOTORCYCLE_BRANDS: [
+    'Bajaj', 'Hero', 'TVS', 'Royal Enfield', 'Yamaha', 'Kawasaki',
+    'Suzuki', 'KTM', 'Ducati', 'Harley-Davidson', 'Triumph', 'Indian',
+    'Aprilia', 'Benelli', 'CFMoto', 'platina'
+  ],
+  COMMERCIAL_BRANDS: [
+    'Tata', 'Ashok Leyland', 'Mahindra', 'Eicher', 'Force Motors',
+    'Isuzu', 'Mercedes-Benz Commercial', 'Volvo Trucks', 'MAN', 'Scania'
+  ]
+};
 
 // File Upload Limits
 export const FILE_LIMITS = {
@@ -131,10 +187,14 @@ export const CHART_COLORS = [
   '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'
 ];
 
-export default {
+const constants = {
   API_BASE_URL,
   VEHICLE_STATUS,
   VEHICLE_STATUS_OPTIONS,
+  VEHICLE_CONDITION,
+  VEHICLE_CONDITION_OPTIONS,
+  VEHICLE_TYPES,
+  VEHICLE_MAKES,
   FUEL_TYPES,
   FUEL_TYPE_OPTIONS,
   FILE_LIMITS,
@@ -148,3 +208,5 @@ export default {
   COLORS,
   CHART_COLORS
 };
+
+export default constants;

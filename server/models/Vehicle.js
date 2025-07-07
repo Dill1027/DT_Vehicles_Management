@@ -31,7 +31,11 @@ const vehicleSchema = new mongoose.Schema({
   type: { 
     type: String, 
     required: [true, 'Vehicle type is required'],
-    enum: ['Car', 'Van', 'Truck', 'Bus', 'Motorcycle', 'Pickup', 'Heavy Machinery', 'Other'],
+    enum: [
+      'Car', 'Van', 'Truck', 'Bus', 'Motorcycle', 'Lorry', 'Heavy Machinery', 
+      'Scooter', 'Electric bike (E-bike)', 'Tuk-tuk (Three-wheeler)', 'Jeep', 
+      'Electric car (EV)', 'Hybrid car', 'Electric van', 'Electric bike/scooter', 'Other'
+    ],
     trim: true
   },
   
@@ -59,8 +63,19 @@ const vehicleSchema = new mongoose.Schema({
   },
   insuranceExpiry: {
     type: Date,
-    required: [true, 'Insurance expiry date is required'],
+    required: function() {
+      // Only required for new vehicles, not for updates
+      return this.isNew;
+    },
     index: true // For efficient expiry queries
+  },
+  licenseExpiry: {
+    type: Date,
+    required: function() {
+      // Only required for new vehicles, not for updates
+      return this.isNew;
+    },
+    index: true
   },
   emissionExpiry: {
     type: Date,
@@ -68,7 +83,6 @@ const vehicleSchema = new mongoose.Schema({
   },
   revenueExpiry: {
     type: Date,
-    required: [true, 'Revenue license expiry is required'],
     index: true
   },
   registrationExpiry: {
@@ -97,6 +111,21 @@ const vehicleSchema = new mongoose.Schema({
   mileage: {
     type: Number,
     min: [0, 'Mileage cannot be negative'],
+    default: 0
+  },
+  monthStartMileage: {
+    type: Number,
+    min: [0, 'Month start mileage cannot be negative'],
+    default: 0
+  },
+  monthEndMileage: {
+    type: Number,
+    min: [0, 'Month end mileage cannot be negative'],
+    default: 0
+  },
+  monthlyMileage: {
+    type: Number,
+    min: [0, 'Monthly mileage cannot be negative'],
     default: 0
   },
   fuelType: {
@@ -136,7 +165,7 @@ const vehicleSchema = new mongoose.Schema({
   // Status and condition
   status: {
     type: String,
-    enum: ['Active', 'In Service', 'Out of Service', 'Retired', 'Pending'],
+    enum: ['Active', 'Inactive', 'In Service', 'Out of Service', 'Under Maintenance', 'Retired'],
     default: 'Active'
   },
   condition: {
@@ -150,6 +179,10 @@ const vehicleSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  vehicleImages: [{
+    type: String,
+    trim: true
+  }],
   images: [{
     url: String,
     description: String,

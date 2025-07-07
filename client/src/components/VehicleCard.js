@@ -5,19 +5,69 @@ const VehicleCard = ({ vehicle, onEdit, onDelete, onView }) => {
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'active':
-      case 'available':
         return 'bg-green-100 text-green-800';
-      case 'in-use':
-      case 'in use':
-        return 'bg-blue-100 text-blue-800';
-      case 'maintenance':
-      case 'in maintenance':
-        return 'bg-orange-100 text-orange-800';
       case 'inactive':
+        return 'bg-red-100 text-red-800';
+      case 'in service':
+        return 'bg-blue-100 text-blue-800';
+      case 'out of service':
+        return 'bg-orange-100 text-orange-800';
+      case 'under maintenance':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'retired':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getConditionColor = (condition) => {
+    switch (condition?.toLowerCase()) {
+      case 'excellent':
+        return 'bg-green-100 text-green-800';
+      case 'good':
+        return 'bg-blue-100 text-blue-800';
+      case 'fair':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'poor':
+        return 'bg-orange-100 text-orange-800';
+      case 'critical':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not set';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = date - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      return `Expired ${Math.abs(diffDays)} days ago`;
+    } else if (diffDays <= 30) {
+      return `Expires in ${diffDays} days`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  const isExpiringSoon = (dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = date - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 30 && diffDays >= 0;
+  };
+
+  const isExpired = (dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const now = new Date();
+    return date < now;
   };
 
   const handleCardClick = () => {
@@ -32,16 +82,39 @@ const VehicleCard = ({ vehicle, onEdit, onDelete, onView }) => {
       onClick={handleCardClick}
     >
       <div className="p-6">
+        {/* Vehicle Image */}
+        {(vehicle.vehicleImages && vehicle.vehicleImages.length > 0) || vehicle.imageUrl ? (
+          <div className="mb-4">
+            <img
+              src={(vehicle.vehicleImages && vehicle.vehicleImages[0]) || vehicle.imageUrl}
+              alt={`${vehicle.make} ${vehicle.vehicleNumber}`}
+              className="w-full h-32 object-cover rounded-md"
+            />
+            {vehicle.vehicleImages && vehicle.vehicleImages.length > 1 && (
+              <p className="text-xs text-gray-500 mt-1">
+                +{vehicle.vehicleImages.length - 1} more image{vehicle.vehicleImages.length > 2 ? 's' : ''}
+              </p>
+            )}
+          </div>
+        ) : null}
+
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="text-xl font-semibold text-gray-900">
-              {vehicle.vehicleNumber || `${vehicle.make} ${vehicle.model}`}
+              {vehicle.vehicleNumber || `${vehicle.make} ${vehicle.year}`}
             </h3>
-            <p className="text-gray-600">{vehicle.make} {vehicle.model} {vehicle.year}</p>
+            <p className="text-gray-600">{vehicle.make} {vehicle.type} {vehicle.year}</p>
           </div>
-          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(vehicle.status)}`}>
-            {vehicle.status || 'Unknown'}
-          </span>
+          <div className="flex flex-col gap-1">
+            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(vehicle.status)}`}>
+              {vehicle.status || 'Unknown'}
+            </span>
+            {vehicle.condition && (
+              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getConditionColor(vehicle.condition)}`}>
+                {vehicle.condition}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2 mb-4">
@@ -51,43 +124,78 @@ const VehicleCard = ({ vehicle, onEdit, onDelete, onView }) => {
               <span className="font-medium">{vehicle.vehicleNumber}</span>
             </div>
           )}
-          {vehicle.licensePlate && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">License Plate:</span>
-              <span className="font-medium">{vehicle.licensePlate}</span>
-            </div>
-          )}
           {vehicle.type && (
             <div className="flex justify-between">
               <span className="text-gray-600">Type:</span>
               <span className="font-medium">{vehicle.type}</span>
             </div>
           )}
-          {vehicle.color && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Color:</span>
-              <span className="font-medium">{vehicle.color}</span>
-            </div>
-          )}
-          {vehicle.mileage && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Mileage:</span>
-              <span className="font-medium">{vehicle.mileage.toLocaleString()} km</span>
-            </div>
-          )}
           {vehicle.fuelType && (
             <div className="flex justify-between">
               <span className="text-gray-600">Fuel Type:</span>
-              <span className="font-medium capitalize">{vehicle.fuelType}</span>
+              <span className="font-medium">{vehicle.fuelType}</span>
+            </div>
+          )}
+          {vehicle.monthlyMileage && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Monthly Distance:</span>
+              <span className="font-medium">{vehicle.monthlyMileage} km</span>
+            </div>
+          )}
+          {vehicle.monthStartMileage && vehicle.monthEndMileage && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Mileage Range:</span>
+              <span className="font-medium">{vehicle.monthStartMileage} - {vehicle.monthEndMileage} km</span>
             </div>
           )}
         </div>
 
-        {vehicle.nextMaintenanceDate && (
-          <div className="mb-4 p-3 bg-blue-50 rounded-md">
-            <p className="text-sm text-blue-800">
-              <span className="font-medium">Next Maintenance:</span>{' '}
-              {new Date(vehicle.nextMaintenanceDate).toLocaleDateString()}
+        {/* Expiry Alerts */}
+        <div className="space-y-2 mb-4">
+          {vehicle.insuranceExpiry && (
+            <div className={`p-2 rounded-md ${
+              isExpired(vehicle.insuranceExpiry) 
+                ? 'bg-red-50 border border-red-200' 
+                : isExpiringSoon(vehicle.insuranceExpiry) 
+                ? 'bg-yellow-50 border border-yellow-200' 
+                : 'bg-green-50 border border-green-200'
+            }`}>
+              <p className={`text-sm ${
+                isExpired(vehicle.insuranceExpiry) 
+                  ? 'text-red-700' 
+                  : isExpiringSoon(vehicle.insuranceExpiry) 
+                  ? 'text-yellow-700' 
+                  : 'text-green-700'
+              }`}>
+                <span className="font-medium">Insurance:</span> {formatDate(vehicle.insuranceExpiry)}
+              </p>
+            </div>
+          )}
+          {vehicle.licenseExpiry && (
+            <div className={`p-2 rounded-md ${
+              isExpired(vehicle.licenseExpiry) 
+                ? 'bg-red-50 border border-red-200' 
+                : isExpiringSoon(vehicle.licenseExpiry) 
+                ? 'bg-yellow-50 border border-yellow-200' 
+                : 'bg-green-50 border border-green-200'
+            }`}>
+              <p className={`text-sm ${
+                isExpired(vehicle.licenseExpiry) 
+                  ? 'text-red-700' 
+                  : isExpiringSoon(vehicle.licenseExpiry) 
+                  ? 'text-yellow-700' 
+                  : 'text-green-700'
+              }`}>
+                <span className="font-medium">License:</span> {formatDate(vehicle.licenseExpiry)}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {vehicle.notes && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-md">
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">Notes:</span> {vehicle.notes}
             </p>
           </div>
         )}
@@ -104,7 +212,7 @@ const VehicleCard = ({ vehicle, onEdit, onDelete, onView }) => {
             View
           </button>
           
-          { (
+          {onEdit && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -117,7 +225,7 @@ const VehicleCard = ({ vehicle, onEdit, onDelete, onView }) => {
             </button>
           )}
           
-          { (
+          {onDelete && (
             <button
               onClick={(e) => {
                 e.stopPropagation();

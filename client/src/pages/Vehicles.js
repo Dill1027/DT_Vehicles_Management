@@ -79,8 +79,7 @@ const Vehicles = () => {
   };
 
   const handleEdit = (vehicle) => {
-    setSelectedVehicle(vehicle);
-    setShowModal(true);
+    navigate(`/vehicles/${vehicle._id || vehicle.id}/edit`);
   };
 
   const handleView = (vehicle) => {
