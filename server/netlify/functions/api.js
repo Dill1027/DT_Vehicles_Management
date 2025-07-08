@@ -118,9 +118,9 @@ const vehicleSchema = new mongoose.Schema({
   make: { type: String, required: true },
   model: { type: String, required: true },
   year: { type: Number, required: true },
-  licensePlate: { type: String, required: true, unique: true },
-  vin: { type: String, required: true, unique: true },
-  color: { type: String, required: true },
+  licensePlate: { type: String, unique: true },
+  vin: { type: String, unique: true },
+  color: { type: String },
   status: { 
     type: String, 
     enum: ['active', 'maintenance', 'out-of-service'], 
@@ -129,8 +129,8 @@ const vehicleSchema = new mongoose.Schema({
   mileage: { type: Number, default: 0 },
   fuelType: { 
     type: String, 
-    enum: ['gasoline', 'diesel', 'electric', 'hybrid'], 
-    default: 'gasoline' 
+    enum: ['Petrol', 'Diesel', 'Electric', 'Hybrid'], 
+    default: 'Petrol' 
   },
   purchaseDate: { type: Date },
   purchasePrice: { type: Number },
