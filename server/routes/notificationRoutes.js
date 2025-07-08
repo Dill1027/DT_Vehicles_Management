@@ -328,4 +328,70 @@ router.get('/insurance-expiry', async (req, res) => {
   }
 });
 
+// Get vehicles with expiring license
+router.get('/license-expiry', async (req, res) => {
+  try {
+    const Vehicle = require('../models/Vehicle');
+    const days = parseInt(req.query.days) || 30;
+    const currentDate = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(currentDate.getDate() + days);
+
+    // Find vehicles with license expiry within the specified range or already expired
+    const vehicles = await Vehicle.find({
+      $or: [
+        // Licenses expiring soon
+        {
+          licenseExpiry: {
+            $gte: currentDate,
+            $lte: futureDate
+          }
+        },
+        // Already expired licenses
+        {
+          licenseExpiry: {
+            $lt: currentDate
+          }
+        }
+      ]
+    }).select('vehicleNumber make model licenseExpiry');
+
+    // Process vehicles to calculate days until expiry or days overdue
+    const licenseAlerts = vehicles.map(vehicle => {
+      const vObj = vehicle.toObject();
+      const expiryDate = new Date(vehicle.licenseExpiry);
+      const daysUntilExpiry = Math.ceil((expiryDate - currentDate) / (1000 * 60 * 60 * 24));
+      
+      return {
+        ...vObj,
+        licenseExpiryDate: vehicle.licenseExpiry,
+        daysUntilExpiry,
+        isExpired: daysUntilExpiry <= 0,
+        urgencyLevel: daysUntilExpiry <= 0 ? 'expired' : 
+                      daysUntilExpiry <= 7 ? 'critical' : 
+                      daysUntilExpiry <= 15 ? 'warning' : 'info'
+      };
+    });
+
+    // Sort by urgency (expired first, then by days remaining)
+    licenseAlerts.sort((a, b) => {
+      if (a.isExpired && !b.isExpired) return -1;
+      if (!a.isExpired && b.isExpired) return 1;
+      return a.daysUntilExpiry - b.daysUntilExpiry;
+    });
+
+    res.json({
+      success: true,
+      data: licenseAlerts
+    });
+  } catch (error) {
+    console.error('Get license expiry alerts error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching license expiry alerts',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

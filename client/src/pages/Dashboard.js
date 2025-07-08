@@ -21,8 +21,11 @@ const Dashboard = () => {
     total: 0,
     available: 0,
     inUse: 0,
+    maintenance: 0,
     insuranceExpiring: 0,
-    insuranceExpired: 0
+    insuranceExpired: 0,
+    licenseExpiring: 0,
+    licenseExpired: 0
   });
 
   useEffect(() => {
@@ -37,11 +40,13 @@ const Dashboard = () => {
       const [
         vehiclesResponse,
         statsResponse,
-        insuranceAlertsResponse
+        insuranceAlertsResponse,
+        licenseAlertsResponse
       ] = await Promise.all([
         vehicleService.getAllVehicles({ limit: 10 }),
         vehicleService.getVehicleStats(),
-        notificationService.getInsuranceExpiryAlerts(30)
+        notificationService.getInsuranceExpiryAlerts(30),
+        notificationService.getLicenseExpiryAlerts(30)
       ]);
 
       // Fix for vehicles.slice is not a function error
@@ -59,15 +64,23 @@ const Dashboard = () => {
       
       const statsData = statsResponse.data || {};
       const insuranceAlerts = insuranceAlertsResponse.data || [];
+      const licenseAlerts = licenseAlertsResponse.data || [];
+      
       const expiredInsurance = insuranceAlerts.filter(alert => alert.isExpired);
       const expiringInsurance = insuranceAlerts.filter(alert => !alert.isExpired);
+      
+      const expiredLicense = licenseAlerts.filter(alert => alert.isExpired);
+      const expiringLicense = licenseAlerts.filter(alert => !alert.isExpired);
       
       setStats({
         total: statsData.total || 0,
         available: statsData.available || 0,
         inUse: statsData.inUse || 0,
+        maintenance: statsData.maintenance || 0,
         insuranceExpiring: expiringInsurance.length,
-        insuranceExpired: expiredInsurance.length
+        insuranceExpired: expiredInsurance.length,
+        licenseExpiring: expiringLicense.length,
+        licenseExpired: expiredLicense.length
       });
       
       setInsuranceAlerts(insuranceAlerts);
@@ -195,7 +208,7 @@ const Dashboard = () => {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <Link to="/vehicles" className="bg-white p-6 rounded-lg shadow-md block hover:shadow-lg transition-shadow">
           <div className="flex items-center">
             <TruckIcon className="h-8 w-8 text-blue-600 mr-3" />
@@ -232,9 +245,21 @@ const Dashboard = () => {
         
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex items-center">
+            <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
+              <div className="h-4 w-4 bg-red-600 rounded-full"></div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">In Maintenance</h3>
+              <p className="text-2xl font-bold text-red-600">{stats.maintenance}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="flex items-center">
             <ClockIcon className="h-8 w-8 text-orange-600 mr-3" />
             <div>
-              <h3 className="text-sm font-medium text-gray-500">Insurance Expiring</h3>
+              <h3 className="text-sm font-medium text-gray-500">Insurance Expiring Soon</h3>
               <p className="text-2xl font-bold text-orange-600">{stats.insuranceExpiring}</p>
             </div>
           </div>
@@ -246,6 +271,26 @@ const Dashboard = () => {
             <div>
               <h3 className="text-sm font-medium text-gray-500">Insurance Expired</h3>
               <p className="text-2xl font-bold text-red-600">{stats.insuranceExpired}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="flex items-center">
+            <ClockIcon className="h-8 w-8 text-purple-600 mr-3" />
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">License Expiring Soon</h3>
+              <p className="text-2xl font-bold text-purple-600">{stats.licenseExpiring}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="flex items-center">
+            <ExclamationTriangleIcon className="h-8 w-8 text-pink-600 mr-3" />
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">License Expired</h3>
+              <p className="text-2xl font-bold text-pink-600">{stats.licenseExpired}</p>
             </div>
           </div>
         </div>

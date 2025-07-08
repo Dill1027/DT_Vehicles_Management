@@ -75,6 +75,78 @@ const notificationService = {
     }
   },
 
+  // Get vehicles with expiring licenses
+  getLicenseExpiryAlerts: async (days = 30) => {
+    try {
+      // Try backend API first, fallback to vehicle service
+      try {
+        const response = await api.get(`/notifications/license-expiry?days=${days}`);
+        return { success: true, data: response.data.data || response.data };
+      } catch (apiError) {
+        // Backend API not available, use vehicle service fallback
+        console.log('Backend API not available, using vehicle service for license alerts...', apiError.message);
+        
+        // Fallback to vehicle service
+        const vehiclesResult = await vehicleService.getAllVehicles();
+        
+        // Handle different response formats
+        let vehicles = [];
+        if (vehiclesResult && vehiclesResult.data && Array.isArray(vehiclesResult.data)) {
+          vehicles = vehiclesResult.data;
+        } else if (vehiclesResult && Array.isArray(vehiclesResult)) {
+          vehicles = vehiclesResult;
+        } else if (vehiclesResult && vehiclesResult.success && Array.isArray(vehiclesResult.data)) {
+          vehicles = vehiclesResult.data;
+        } else {
+          console.warn('Unexpected vehicles result format:', vehiclesResult);
+          vehicles = [];
+        }
+        
+        const currentDate = new Date();
+        const licenseAlerts = [];
+        
+        vehicles.forEach(vehicle => {
+          if (vehicle.licenseExpiry) {
+            const expiryDate = new Date(vehicle.licenseExpiry);
+            const daysUntilExpiry = Math.ceil((expiryDate - currentDate) / (1000 * 60 * 60 * 24));
+            
+            // Include vehicles with license expiring within the specified days or already expired
+            if (daysUntilExpiry <= days) {
+              let urgencyLevel = 'info';
+              if (daysUntilExpiry <= 0) {
+                urgencyLevel = 'expired';
+              } else if (daysUntilExpiry <= 7) {
+                urgencyLevel = 'critical';
+              } else if (daysUntilExpiry <= 15) {
+                urgencyLevel = 'warning';
+              }
+              
+              licenseAlerts.push({
+                ...vehicle,
+                licenseExpiryDate: vehicle.licenseExpiry,
+                daysUntilExpiry,
+                isExpired: daysUntilExpiry <= 0,
+                urgencyLevel
+              });
+            }
+          }
+        });
+        
+        // Sort by urgency (expired first, then by days remaining)
+        licenseAlerts.sort((a, b) => {
+          if (a.isExpired && !b.isExpired) return -1;
+          if (!a.isExpired && b.isExpired) return 1;
+          return a.daysUntilExpiry - b.daysUntilExpiry;
+        });
+        
+        return { success: true, data: licenseAlerts };
+      }
+    } catch (error) {
+      console.error('Error fetching license expiry alerts:', error);
+      return { success: false, data: [] };
+    }
+  },
+
   // Get expiring vehicles
   getExpiringVehicles: async (days = 30) => {
     try {
