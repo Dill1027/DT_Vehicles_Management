@@ -304,8 +304,10 @@ vehicleSchema.index({ assignedDriver: 1 });
 vehicleSchema.index({ insuranceExpiry: 1 });
 vehicleSchema.index({ emissionExpiry: 1 });
 vehicleSchema.index({ revenueExpiry: 1 });
+vehicleSchema.index({ licenseExpiry: 1 });
+vehicleSchema.index({ registrationExpiry: 1 });
 vehicleSchema.index({ nextMaintenanceDate: 1 });
-vehicleSchema.index({ insuranceExpiry: 1, emissionExpiry: 1, revenueExpiry: 1 });
+vehicleSchema.index({ insuranceExpiry: 1, emissionExpiry: 1, revenueExpiry: 1, licenseExpiry: 1 });
 vehicleSchema.index({ department: 1, status: 1 });
 vehicleSchema.index({ type: 1, department: 1 });
 
@@ -346,6 +348,22 @@ vehicleSchema.virtual('daysUntilEmissionExpiry').get(function() {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 });
 
+// Virtual for days until license expiry
+vehicleSchema.virtual('daysUntilLicenseExpiry').get(function() {
+  if (!this.licenseExpiry) return null;
+  const today = new Date();
+  const diffTime = this.licenseExpiry - today;
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+});
+
+// Virtual for checking if license is expiring soon (within 30 days)
+vehicleSchema.virtual('isLicenseExpiringSoon').get(function() {
+  if (!this.licenseExpiry) return false;
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  return this.licenseExpiry <= thirtyDaysFromNow;
+});
+
 // Virtual for days until revenue expiry
 vehicleSchema.virtual('daysUntilRevenueExpiry').get(function() {
   if (!this.revenueExpiry) return null;
@@ -363,6 +381,7 @@ vehicleSchema.methods.getExpiryAlerts = function() {
     { field: 'insuranceExpiry', name: 'Insurance' },
     { field: 'emissionExpiry', name: 'Emission Test' },
     { field: 'revenueExpiry', name: 'Revenue License' },
+    { field: 'licenseExpiry', name: 'Vehicle License' },
     { field: 'registrationExpiry', name: 'Registration' },
     { field: 'leaseDue', name: 'Lease' },
     { field: 'nextServiceDue', name: 'Service' }
