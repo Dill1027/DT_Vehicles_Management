@@ -2,10 +2,12 @@
 
 ## Problem
 The application was throwing 500 errors with validation messages:
-- `color: Path 'color' is required.`
-- `vin: Path 'vin' is required.`
-- `licensePlate: Path 'licensePlate' is required.`
-- `fuelType: 'Diesel/Petrol' is not a valid enum value`
+- `color: Path 'color' is required.` ✅ **FIXED**
+- `vin: Path 'vin' is required.` ✅ **FIXED**
+- `licensePlate: Path 'licensePlate' is required.` ✅ **FIXED**
+- `fuelType: 'Diesel/Petrol' is not a valid enum value` ✅ **FIXED**
+- `model: Path 'model' is required.` ✅ **FIXED**
+- `status: 'Active' is not a valid enum value` ✅ **FIXED**
 
 ## Root Cause
 There were duplicate Vehicle schemas in the API files with different validation rules than the main Vehicle model.
@@ -21,10 +23,11 @@ There were duplicate Vehicle schemas in the API files with different validation 
    - `color` → now optional
    - `vin` → now optional  
    - `licensePlate` → now optional
+   - `model` → now optional
 
-2. **Fixed fuelType enum values**:
-   - **Before**: `['gasoline', 'diesel', 'electric', 'hybrid']`
-   - **After**: `['Petrol', 'Diesel', 'Electric', 'Hybrid']`
+2. **Fixed enum values**:
+   - **fuelType**: `['gasoline', 'diesel', ...]` → `['Petrol', 'Diesel', ...]`
+   - **status**: `['active', 'maintenance', ...]` → `['Active', 'Inactive', 'In Service', 'Out of Service', 'Under Maintenance', 'Retired']`
 
 ### ✅ Deployment Status
 - ✅ Changes committed and pushed to GitHub
