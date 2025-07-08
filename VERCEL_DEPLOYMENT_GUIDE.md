@@ -1,233 +1,271 @@
-# 🚀 VERCEL DEPLOYMENT GUIDE - Complete Setup
+# Vercel Deployment Guide for DT Vehicles Management System
 
-## 📋 **Overview**
-This guide will help you deploy both frontend and backend to Vercel with all required environment variables.
+This guide will help you deploy your full-stack vehicle management application to Vercel.
 
-**Your URLs:**
-- **Backend**: `https://dt-vehicles-management.vercel.app`
-- **Frontend**: `https://dt-vehicles-management-3kdr.vercel.app` (or new URL)
+## Overview
 
----
+Your application consists of:
+- **Frontend**: React app (client folder)
+- **Backend**: Node.js API (server folder)
 
-## 🔧 **BACKEND DEPLOYMENT (Server)**
+We'll deploy both components to Vercel as separate projects.
 
-### **Step 1: Create Backend Project**
-1. Go to https://vercel.com/dashboard
-2. Click **"New Project"**
-3. Import `Dill1027/DT_Vehicles_Management`
-4. **Set Root Directory**: `server` ⚠️ IMPORTANT!
-5. Framework: Other
-6. Build Command: `npm install`
-7. Output Directory: (leave empty)
+## Prerequisites
 
-### **Step 2: Backend Environment Variables**
-Add these to **Settings → Environment Variables**:
+1. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
+2. **Vercel CLI**: Install globally
+   ```bash
+   npm install -g vercel
+   ```
+3. **Git Repository**: Your code should be in a Git repository (GitHub, GitLab, or Bitbucket)
 
-#### **🔥 CRITICAL VARIABLES:**
-```bash
+## Step 1: Deploy the Backend API
+
+### 1.1 Prepare Backend for Deployment
+
+Your backend is already configured with:
+- ✅ `server/vercel.json` - Vercel configuration
+- ✅ `server/api/index.js` - Serverless function entry point
+- ✅ Proper package.json with dependencies
+
+### 1.2 Environment Variables for Backend
+
+Create these environment variables in Vercel dashboard:
+
+```
 NODE_ENV=production
-MONGODB_URI=mongodb+srv://prabhathdilshan2001:1234@as.gp7z1.mongodb.net/dt_petty_cash
-JWT_SECRET=dt-vehicles-super-secret-jwt-key-2024-vercel-production
-FRONTEND_URL=https://dt-vehicles-management-3kdr.vercel.app
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
+PORT=3001
 ```
 
-#### **📁 FILE UPLOAD:**
+### 1.3 Deploy Backend
+
+From your project root:
+
 ```bash
-MAX_FILE_SIZE=10485760
-ALLOWED_FILE_TYPES=image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf
-```
-
-#### **🚦 RATE LIMITING:**
-```bash
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-JWT_EXPIRE=30d
-```
-
-#### **📧 NOTIFICATIONS (Optional):**
-```bash
-ADMIN_EMAIL=admin@deeptec.com
-FLEET_MANAGER_EMAIL=fleet@deeptec.com
-ENGINEERING_EMAIL=engineering@deeptec.com
-OPERATIONS_EMAIL=operations@deeptec.com
-ADMINISTRATION_EMAIL=admin@deeptec.com
-SALES_EMAIL=sales@deeptec.com
-MAINTENANCE_EMAIL=maintenance@deeptec.com
-EXECUTIVE_EMAIL=executive@deeptec.com
-```
-
-### **Step 3: Deploy Backend**
-- Click **"Deploy"**
-- Wait for completion
-- Test: `https://your-backend-url.vercel.app/api/health`
-
----
-
-## 🎨 **FRONTEND DEPLOYMENT (Client)**
-
-### **Step 1: Create Frontend Project**
-1. Go to https://vercel.com/dashboard
-2. Click **"New Project"** (again, separate project)
-3. Import `Dill1027/DT_Vehicles_Management`
-4. **Set Root Directory**: `client` ⚠️ IMPORTANT!
-5. Framework: Create React App
-6. Build Command: `npm run build`
-7. Output Directory: `build`
-
-### **Step 2: Frontend Environment Variables**
-Add these to **Settings → Environment Variables**:
-
-#### **🔗 API CONFIGURATION:**
-```bash
-REACT_APP_API_URL=https://dt-vehicles-management.vercel.app/api
-```
-
-#### **⚡ BUILD OPTIMIZATION:**
-```bash
-NODE_ENV=production
-REACT_APP_NODE_ENV=production
-GENERATE_SOURCEMAP=false
-INLINE_RUNTIME_CHUNK=false
-BUILD_PATH=build
-```
-
-### **Step 3: Deploy Frontend**
-- Click **"Deploy"**
-- Wait for completion
-- Test: `https://your-frontend-url.vercel.app`
-
----
-
-## 📝 **ENVIRONMENT VARIABLES CHECKLIST**
-
-### **Backend Project (`dt-vehicles-management`):**
-- [ ] `NODE_ENV=production`
-- [ ] `MONGODB_URI=mongodb+srv://prabhathdilshan2001:1234@as.gp7z1.mongodb.net/dt_petty_cash`
-- [ ] `JWT_SECRET=dt-vehicles-super-secret-jwt-key-2024-vercel-production`
-- [ ] `FRONTEND_URL=https://dt-vehicles-management-3kdr.vercel.app`
-- [ ] `MAX_FILE_SIZE=10485760`
-- [ ] `ALLOWED_FILE_TYPES=image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf`
-- [ ] `RATE_LIMIT_WINDOW_MS=900000`
-- [ ] `RATE_LIMIT_MAX_REQUESTS=100`
-- [ ] `JWT_EXPIRE=30d`
-
-### **Frontend Project (`dt-vehicles-management-3kdr` or new):**
-- [ ] `REACT_APP_API_URL=https://dt-vehicles-management.vercel.app/api`
-- [ ] `NODE_ENV=production`
-- [ ] `REACT_APP_NODE_ENV=production`
-- [ ] `GENERATE_SOURCEMAP=false`
-- [ ] `INLINE_RUNTIME_CHUNK=false`
-- [ ] `BUILD_PATH=build`
-
----
-
-## 🧪 **TESTING YOUR DEPLOYMENT**
-
-### **Test Backend:**
-```bash
-# Health check
-curl https://dt-vehicles-management.vercel.app/api/health
-
-# Should return:
-# {"status":"OK","message":"DT Vehicles Management API is running",...}
-
-# Test vehicles endpoint
-curl https://dt-vehicles-management.vercel.app/api/vehicles
-
-# Should return vehicles data or empty array
-```
-
-### **Test Frontend:**
-1. Visit your frontend URL
-2. Open browser console (F12)
-3. Look for: `🔗 API Configuration` logs
-4. Should show your backend URL
-5. Try creating a vehicle with images
-
----
-
-## 🔄 **IF DEPLOYMENT FAILS**
-
-### **Backend Issues:**
-1. Check Function logs in Vercel dashboard
-2. Verify all environment variables are set
-3. Ensure MongoDB URI is correct
-4. Check `server/vercel.json` configuration
-
-### **Frontend Issues:**
-1. Check build logs
-2. Verify `REACT_APP_API_URL` points to backend
-3. Ensure `client/vercel.json` exists
-4. Check for console errors
-
-### **CORS Issues:**
-1. Update `FRONTEND_URL` in backend environment
-2. Wait for automatic redeploy
-3. Test again
-
----
-
-## 📱 **QUICK DEPLOYMENT COMMANDS**
-
-### **Using Vercel CLI (Alternative):**
-```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Deploy Backend
 cd server
 vercel --prod
-# Set root directory to 'server' when prompted
-
-# Deploy Frontend
-cd ../client
-vercel --prod
-# Set root directory to 'client' when prompted
 ```
 
----
+Or deploy via Vercel Dashboard:
+1. Go to [vercel.com/dashboard](https://vercel.com/dashboard)
+2. Click "New Project"
+3. Import your Git repository
+4. Set Root Directory to `server`
+5. Add environment variables
+6. Deploy
 
-## 🎯 **FINAL CHECKLIST**
+**Important**: Note the backend URL (e.g., `https://your-backend.vercel.app`)
 
-- [ ] Backend deployed and responding to health check
-- [ ] Frontend deployed and accessible
-- [ ] All environment variables added
-- [ ] API calls working from frontend to backend
-- [ ] Image upload functionality working
-- [ ] Vehicle creation/editing working
-- [ ] No CORS errors in browser console
+## Step 2: Deploy the Frontend
 
----
+### 2.1 Update API Configuration
 
-## 🆘 **TROUBLESHOOTING**
+Update your frontend API configuration to point to the deployed backend:
 
-### **Common Issues:**
+**File: `client/src/services/api.js`**
+```javascript
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://your-backend.vercel.app';
+```
 
-**1. Function Invocation Failed:**
-- Check environment variables
-- Verify MongoDB connection string
-- Look at Function logs in Vercel
+### 2.2 Environment Variables for Frontend
 
-**2. CORS Errors:**
-- Update `FRONTEND_URL` in backend
-- Wait for redeploy
-- Clear browser cache
+Create these environment variables in Vercel dashboard:
 
-**3. API Not Found (404):**
-- Check `REACT_APP_API_URL` in frontend
-- Verify backend deployment
-- Test backend health endpoint
+```
+REACT_APP_API_URL=https://your-backend.vercel.app
+```
 
-**4. Images Not Loading:**
-- Check file size limits
-- Verify image upload endpoints
-- Check console for errors
+### 2.3 Deploy Frontend
 
-### **Support URLs:**
-- Backend Health: `https://dt-vehicles-management.vercel.app/api/health`
-- Frontend: Your frontend deployment URL
-- Vercel Dashboard: https://vercel.com/dashboard
+From your project root:
 
----
+```bash
+cd client
+vercel --prod
+```
 
-**🎉 Once both deployments are complete, your DT Vehicles Management System will be fully operational on Vercel!**
+Or deploy via Vercel Dashboard:
+1. Create a new project
+2. Import your Git repository
+3. Set Root Directory to `client`
+4. Add environment variables
+5. Deploy
+
+## Step 3: Automated Deployment Setup
+
+### 3.1 Root Level Vercel Configuration
+
+Create a root-level `vercel.json` for monorepo deployment:
+
+```json
+{
+  "version": 2,
+  "projects": [
+    {
+      "name": "dt-vehicles-backend",
+      "source": "server",
+      "framework": null
+    },
+    {
+      "name": "dt-vehicles-frontend",
+      "source": "client",
+      "framework": "create-react-app"
+    }
+  ]
+}
+```
+
+### 3.2 GitHub Actions (Optional)
+
+For automated deployment on git push, create `.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+      - name: Deploy Backend
+        run: vercel --token=${{ secrets.VERCEL_TOKEN }} --prod --yes
+        working-directory: ./server
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_BACKEND }}
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+      - name: Deploy Frontend
+        run: vercel --token=${{ secrets.VERCEL_TOKEN }} --prod --yes
+        working-directory: ./client
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
+```
+
+## Step 4: Database Setup
+
+### 4.1 MongoDB Atlas (Recommended)
+
+1. Create account at [MongoDB Atlas](https://www.mongodb.com/atlas)
+2. Create a new cluster
+3. Add database user
+4. Configure network access (allow all IPs: 0.0.0.0/0 for Vercel)
+5. Get connection string
+6. Add to Vercel environment variables
+
+### 4.2 Alternative: MongoDB Connection String
+
+Format: `mongodb+srv://username:password@cluster.mongodb.net/database_name`
+
+## Step 5: Domain Configuration
+
+### 5.1 Custom Domain (Optional)
+
+1. In Vercel dashboard, go to your frontend project
+2. Go to Settings > Domains
+3. Add your custom domain
+4. Update DNS records as instructed
+
+### 5.2 CORS Configuration
+
+Ensure your backend allows requests from your frontend domain:
+
+```javascript
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'https://your-frontend.vercel.app',
+    'https://your-custom-domain.com'
+  ],
+  credentials: true
+};
+```
+
+## Step 6: Testing Deployment
+
+### 6.1 Backend Testing
+
+Test your API endpoints:
+```bash
+curl https://your-backend.vercel.app/api/vehicles
+```
+
+### 6.2 Frontend Testing
+
+1. Visit your frontend URL
+2. Test vehicle CRUD operations
+3. Check browser console for errors
+4. Verify API calls are working
+
+## Troubleshooting
+
+### Common Issues
+
+1. **CORS Errors**: Update CORS configuration in backend
+2. **API Not Found**: Check API_BASE_URL in frontend
+3. **Database Connection**: Verify MongoDB connection string
+4. **Environment Variables**: Ensure all required env vars are set
+5. **Build Errors**: Check build logs in Vercel dashboard
+
+### Debug Steps
+
+1. Check Vercel function logs
+2. Verify environment variables
+3. Test API endpoints individually
+4. Check network requests in browser DevTools
+
+## Environment Variables Checklist
+
+### Backend (.env)
+```
+NODE_ENV=production
+MONGODB_URI=mongodb+srv://...
+JWT_SECRET=your-secret-key
+PORT=3001
+```
+
+### Frontend (.env)
+```
+REACT_APP_API_URL=https://your-backend.vercel.app
+```
+
+## Deployment Commands Summary
+
+```bash
+# Deploy backend
+cd server
+vercel --prod
+
+# Deploy frontend
+cd client
+vercel --prod
+
+# Or deploy both with custom names
+vercel --prod --name dt-vehicles-backend
+vercel --prod --name dt-vehicles-frontend
+```
+
+## Support
+
+If you encounter issues:
+1. Check Vercel documentation
+2. Review deployment logs
+3. Test locally first
+4. Verify all configurations
+
+Your vehicle management system should now be live and accessible worldwide! 🚀

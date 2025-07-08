@@ -130,3 +130,6 @@ dist/
 Dockerfile
 docker-compose.yml
 .dockerignore
+
+# Local Netlify folder
+.netlify

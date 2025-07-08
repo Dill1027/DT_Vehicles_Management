@@ -8,7 +8,7 @@ const isLocalhost = window.location.hostname === 'localhost' || window.location.
 // Set up API base URL with automatic environment detection
 const API_BASE_URL = process.env.REACT_APP_API_URL || 
                      (isDev || isLocalhost ? 'http://localhost:5001/api' : 
-                      'https://dt-vehicles-management.vercel.app/api'); // Your actual backend URL
+                      'https://server-2y5doibmh-dill1027s-projects.vercel.app/api'); // Your actual backend URL
 
 // Debug logging
 console.log('🔗 API Configuration:', {

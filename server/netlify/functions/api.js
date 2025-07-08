@@ -1,20 +1,12 @@
-// Complete serverless API for DT Vehicles Management
+// Netlify Function for DT Vehicles Management API
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const serverless = require('serverless-http');
 
 const app = express();
 
-// Add simple authentication bypass
-app.use((req, res, next) => {
-  // Skip authentication for health checks
-  if (req.path === '/api/health' || req.path === '/health') {
-    return next();
-  }
-  next();
-});
-
-// Enhanced CORS configuration
+// Enhanced CORS configuration for Netlify
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -27,11 +19,19 @@ const corsOptions = {
       'http://127.0.0.1:3001',
       'https://dtvehicledetails.netlify.app',
       'https://dt-vehicles-management.vercel.app',
-      'https://client-pvlx3xpbu-dill1027s-projects.vercel.app'
+      /\.netlify\.app$/,
+      /\.vercel\.app$/
     ];
     
-    // Allow all Vercel domains
-    if (origin.includes('.vercel.app') || allowedOrigins.includes(origin)) {
+    // Check if origin matches any allowed origins or patterns
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return origin === allowedOrigin;
+      }
+      return allowedOrigin.test(origin);
+    });
+    
+    if (isAllowed || !origin) {
       return callback(null, true);
     }
     
@@ -48,17 +48,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Add bypass for health endpoint
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    message: 'API is working',
-    timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV || 'development',
-    bypass: true
-  });
-});
 
 // MongoDB connection cache
 let isConnected = false;
@@ -86,11 +75,20 @@ const connectDB = async () => {
   }
 };
 
-// Test endpoints
+// Health check endpoints
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'Netlify API is working',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'development'
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
-    message: 'API is working',
+    message: 'Netlify API is working',
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV || 'development'
   });
@@ -378,6 +376,21 @@ app.get('/api/notifications/insurance-expiry', async (req, res) => {
   }
 });
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    message: 'DT Vehicles Management API',
+    version: '1.0.0',
+    platform: 'Netlify Functions',
+    endpoints: {
+      health: '/api/health',
+      vehicles: '/api/vehicles',
+      stats: '/api/vehicles/stats',
+      notifications: '/api/notifications/insurance-expiry'
+    }
+  });
+});
+
 // Catch all
 app.use('*', (req, res) => {
   res.status(404).json({
@@ -385,4 +398,7 @@ app.use('*', (req, res) => {
   });
 });
 
-module.exports = app;
+// Export the serverless handler
+const handler = serverless(app);
+
+module.exports = { handler };
