@@ -5,13 +5,12 @@ import { toast } from 'react-hot-toast';
 const isDev = process.env.NODE_ENV === 'development';
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-// Set up API base URL with automatic environment detection
-const API_BASE_URL = process.env.REACT_APP_API_URL || 
-                     (isDev || isLocalhost ? 'http://localhost:5001/api' : 
-                      'https://dtvehicle.netlify.app/api'); // Updated to use Netlify backend
+// Set up API base URL - FORCE use environment variable first
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://dtvehicle.netlify.app/api';
 
 // Debug logging
 console.log('🔗 API Configuration:', {
+  envApiUrl: process.env.REACT_APP_API_URL,
   isDev,
   isLocalhost,
   baseURL: API_BASE_URL,
