@@ -1,15 +1,10 @@
 // Static-friendly vehicle service for Netlify deployment
 import { mockVehicleService, mockMaintenanceService, mockUserService } from './mockDataService';
 
-// Check if we're in a deployed environment without backend
+// Check if we should use static data (always true for local development)
 const isStaticDeployment = () => {
-  // Always use static deployment for this demo app
-  // If REACT_APP_API_URL is not set or we're on Netlify without backend
-  return !process.env.REACT_APP_API_URL || 
-         process.env.REACT_APP_API_URL.includes('your-backend-domain') ||
-         process.env.REACT_APP_API_URL.includes('localhost:5001') ||
-         window.location.hostname.includes('netlify.app') ||
-         process.env.NODE_ENV === 'development';
+  // Always use static data - no backend needed
+  return true;
 };
 
 // Vehicle Service - works with or without backend
@@ -57,11 +52,15 @@ export const vehicleService = {
       
       return { 
         success: true, 
-        data: {
-          vehicles: paginatedVehicles,
-          totalVehicles,
-          totalPages,
-          currentPage: page
+        data: paginatedVehicles,
+        total: totalVehicles,
+        pages: totalPages,
+        page: page,
+        pagination: {
+          page,
+          limit,
+          total: totalVehicles,
+          pages: totalPages
         }
       };
     }

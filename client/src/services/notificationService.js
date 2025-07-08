@@ -15,7 +15,20 @@ const notificationService = {
         
         // Fallback to vehicle service
         const vehiclesResult = await vehicleService.getAllVehicles();
-        const vehicles = vehiclesResult.data || [];
+        console.log('Vehicles result:', vehiclesResult);
+        
+        // Handle different response formats
+        let vehicles = [];
+        if (vehiclesResult && vehiclesResult.data && Array.isArray(vehiclesResult.data)) {
+          vehicles = vehiclesResult.data;
+        } else if (vehiclesResult && Array.isArray(vehiclesResult)) {
+          vehicles = vehiclesResult;
+        } else if (vehiclesResult && vehiclesResult.success && Array.isArray(vehiclesResult.data)) {
+          vehicles = vehiclesResult.data;
+        } else {
+          console.warn('Unexpected vehicles result format:', vehiclesResult);
+          vehicles = [];
+        }
         
         const currentDate = new Date();
         const insuranceAlerts = [];

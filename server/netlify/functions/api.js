@@ -58,9 +58,11 @@ const connectDB = async () => {
   try {
     const uri = process.env.MONGODB_URI;
     if (!uri) {
+      console.error('MONGODB_URI environment variable is not set');
       throw new Error('MONGODB_URI not set');
     }
 
+    console.log('Attempting to connect to MongoDB...');
     await mongoose.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -68,9 +70,11 @@ const connectDB = async () => {
     });
 
     isConnected = true;
-    console.log('MongoDB connected');
+    console.log('MongoDB connected successfully');
   } catch (error) {
-    console.error('MongoDB error:', error.message);
+    console.error('MongoDB connection error:', error.message);
+    console.error('Full error:', error);
+    isConnected = false;
     throw error;
   }
 };
@@ -91,6 +95,25 @@ app.get('/api/health', (req, res) => {
     message: 'Netlify API is working',
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Debug endpoint for environment variables
+app.get('/api/debug', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'Debug info',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'development',
+    hasMongoUri: !!process.env.MONGODB_URI,
+    mongoUri: process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 20) + '...' : 'Not set',
+    mongooseState: mongoose.connection.readyState,
+    mongooseStates: {
+      0: 'disconnected',
+      1: 'connected',
+      2: 'connecting',
+      3: 'disconnecting'
+    }
   });
 });
 
@@ -150,7 +173,9 @@ const Vehicle = mongoose.models.Vehicle || mongoose.model('Vehicle', vehicleSche
 // Vehicle endpoints
 app.get('/api/vehicles', async (req, res) => {
   try {
+    console.log('Fetching vehicles - Start');
     await connectDB();
+    console.log('Database connected successfully');
     
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -173,12 +198,16 @@ app.get('/api/vehicles', async (req, res) => {
     
     const skip = (page - 1) * limit;
     
+    console.log('Executing vehicle query:', { query, skip, limit });
+    
     const vehicles = await Vehicle.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
     
     const total = await Vehicle.countDocuments(query);
+    
+    console.log(`Found ${vehicles.length} vehicles out of ${total} total`);
     
     res.json({
       success: true,
@@ -192,9 +221,11 @@ app.get('/api/vehicles', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching vehicles:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
+      error: process.env.NODE_ENV === 'development' ? error.stack : 'Internal server error'
     });
   }
 });
@@ -235,9 +266,12 @@ app.get('/api/vehicles/stats', async (req, res) => {
     await connectDB();
     
     const totalVehicles = await Vehicle.countDocuments();
-    const activeVehicles = await Vehicle.countDocuments({ status: 'active' });
-    const maintenanceVehicles = await Vehicle.countDocuments({ status: 'maintenance' });
-    const outOfServiceVehicles = await Vehicle.countDocuments({ status: 'out-of-service' });
+    const activeVehicles = await Vehicle.countDocuments({ status: 'Active' });
+    const maintenanceVehicles = await Vehicle.countDocuments({ status: 'Under Maintenance' });
+    const outOfServiceVehicles = await Vehicle.countDocuments({ status: 'Out of Service' });
+    const inactiveVehicles = await Vehicle.countDocuments({ status: 'Inactive' });
+    const inServiceVehicles = await Vehicle.countDocuments({ status: 'In Service' });
+    const retiredVehicles = await Vehicle.countDocuments({ status: 'Retired' });
     
     // Insurance expiry alerts (next 30 days)
     const thirtyDaysFromNow = new Date();
@@ -254,6 +288,9 @@ app.get('/api/vehicles/stats', async (req, res) => {
         activeVehicles,
         maintenanceVehicles,
         outOfServiceVehicles,
+        inactiveVehicles,
+        inServiceVehicles,
+        retiredVehicles,
         insuranceExpiryAlerts
       }
     });
@@ -353,15 +390,21 @@ app.delete('/api/vehicles/:id', async (req, res) => {
 // Notification endpoints
 app.get('/api/notifications/insurance-expiry', async (req, res) => {
   try {
+    console.log('Fetching insurance expiry notifications - Start');
     await connectDB();
+    console.log('Database connected successfully for notifications');
     
     const days = parseInt(req.query.days) || 30;
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + days);
     
+    console.log('Searching for vehicles with insurance expiry between:', new Date(), 'and', targetDate);
+    
     const vehicles = await Vehicle.find({
       insuranceExpiry: { $lte: targetDate, $gte: new Date() }
     }).sort({ insuranceExpiry: 1 });
+    
+    console.log(`Found ${vehicles.length} vehicles with insurance expiring soon`);
     
     res.json({
       success: true,
@@ -369,9 +412,11 @@ app.get('/api/notifications/insurance-expiry', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching insurance expiry notifications:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
+      error: process.env.NODE_ENV === 'development' ? error.stack : 'Internal server error'
     });
   }
 });
@@ -399,6 +444,19 @@ app.use('*', (req, res) => {
 });
 
 // Export the serverless handler
-const handler = serverless(app);
+const handler = serverless(app, {
+  binary: false,
+  request: (request, event, context) => {
+    // Handle the path properly for Netlify functions
+    const path = event.path;
+    if (path.startsWith('/.netlify/functions/api')) {
+      request.url = path.replace('/.netlify/functions/api', '');
+      if (request.url === '') {
+        request.url = '/';
+      }
+    }
+    return request;
+  }
+});
 
 module.exports = { handler };

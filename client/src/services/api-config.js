@@ -1,6 +1,6 @@
-// Auto-generated API configuration for deployment
+// API configuration for DT Vehicles Management - Local Development Only
 export const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_URL || '[A',
+  BASE_URL: 'http://localhost:3000', // Not used - static data only
   TIMEOUT: 10000,
-  ENVIRONMENT: process.env.NODE_ENV || 'production'
+  ENVIRONMENT: 'development'
 };
