@@ -157,27 +157,27 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Welcome to Vehicle Management!
           </h1>
           <p className="text-gray-600">Deep Tec Engineering Vehicle Management Dashboard</p>
         </div>
         
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => handleDownloadReport('summary')}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
           >
             <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
             Vehicle Report
           </button>
           <button
             onClick={() => handleDownloadReport('expiry')}
-            className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+            className="flex items-center px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors shadow-sm"
           >
             <ClockIcon className="h-5 w-5 mr-2" />
             Expiry Report
@@ -187,7 +187,7 @@ const Dashboard = () => {
       
       {/* Active Filter Banner */}
       {activeFilter !== 'all' && (
-        <div className={`mt-4 p-3 rounded-lg flex justify-between items-center ${
+        <div className={`mt-4 p-3 rounded-lg flex flex-col sm:flex-row justify-between items-center gap-2 shadow-sm ${
           activeFilter === 'insurance' ? 'bg-blue-50 border border-blue-200' : 'bg-purple-50 border border-purple-200'
         }`}>
           <div className="flex items-center">
@@ -202,24 +202,27 @@ const Dashboard = () => {
           </div>
           <button 
             onClick={() => setActiveFilter('all')} 
-            className={`px-3 py-1 rounded-md text-sm font-medium ${
+            className={`px-3 py-1 rounded-md text-sm font-medium flex items-center ${
               activeFilter === 'insurance' 
                 ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
                 : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
             }`}
           >
-            Show All
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Clear Filter
           </button>
         </div>
       )}
 
       {/* Alert Cards */}
       {insuranceAlerts.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
           {/* Expired Insurance Alert */}
           {insuranceAlerts.filter(alert => alert.isExpired).length > 0 && (
             <div 
-              className="bg-red-50 border border-red-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:bg-red-100 transition-all transform hover:scale-[1.01]"
+              className="bg-red-50 border border-red-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:bg-red-100 transition-all transform hover:scale-[1.01] shadow-sm"
               onClick={() => handleFilterClick('insurance')}
               role="button"
               tabIndex={0}
@@ -227,7 +230,7 @@ const Dashboard = () => {
               aria-label="Filter by expired insurance"
             >
               <div className="flex items-center">
-                <ExclamationTriangleIcon className="h-6 w-6 text-red-600 mr-3" />
+                <ExclamationTriangleIcon className="h-6 w-6 text-red-600 mr-3 flex-shrink-0" />
                 <div>
                   <h3 className="text-lg font-semibold text-red-800">
                     {insuranceAlerts.filter(alert => alert.isExpired).length} Expired Insurance
@@ -241,7 +244,7 @@ const Dashboard = () => {
           {/* Expiring Soon Insurance Alert */}
           {insuranceAlerts.filter(alert => !alert.isExpired).length > 0 && (
             <div 
-              className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:bg-yellow-100 transition-all transform hover:scale-[1.01]"
+              className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:bg-yellow-100 transition-all transform hover:scale-[1.01] shadow-sm"
               onClick={() => handleFilterClick('insurance')}
               role="button"
               tabIndex={0}
@@ -249,7 +252,7 @@ const Dashboard = () => {
               aria-label="Filter by insurance expiring soon"
             >
               <div className="flex items-center">
-                <ClockIcon className="h-6 w-6 text-yellow-600 mr-3" />
+                <ClockIcon className="h-6 w-6 text-yellow-600 mr-3 flex-shrink-0" />
                 <div>
                   <h3 className="text-lg font-semibold text-yellow-800">
                     {insuranceAlerts.filter(alert => !alert.isExpired).length} Insurance Expiring Soon
@@ -264,11 +267,11 @@ const Dashboard = () => {
 
       {/* Alert Cards for License */}
       {licenseAlerts.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
           {/* Expired License Alert */}
           {licenseAlerts.filter(alert => alert.isExpired).length > 0 && (
             <div 
-              className="bg-red-50 border border-red-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:bg-red-100 transition-all transform hover:scale-[1.01]"
+              className="bg-red-50 border border-red-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:bg-red-100 transition-all transform hover:scale-[1.01] shadow-sm"
               onClick={() => handleFilterClick('license')}
               role="button"
               tabIndex={0}
@@ -276,7 +279,7 @@ const Dashboard = () => {
               aria-label="Filter by expired license"
             >
               <div className="flex items-center">
-                <ExclamationTriangleIcon className="h-6 w-6 text-red-600 mr-3" />
+                <ExclamationTriangleIcon className="h-6 w-6 text-red-600 mr-3 flex-shrink-0" />
                 <div>
                   <h3 className="text-lg font-semibold text-red-800">
                     {licenseAlerts.filter(alert => alert.isExpired).length} Expired License
@@ -290,7 +293,7 @@ const Dashboard = () => {
           {/* Expiring Soon License Alert */}
           {licenseAlerts.filter(alert => !alert.isExpired).length > 0 && (
             <div 
-              className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:bg-yellow-100 transition-all transform hover:scale-[1.01]"
+              className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:bg-yellow-100 transition-all transform hover:scale-[1.01] shadow-sm"
               onClick={() => handleFilterClick('license')}
               role="button"
               tabIndex={0}
@@ -298,7 +301,7 @@ const Dashboard = () => {
               aria-label="Filter by license expiring soon"
             >
               <div className="flex items-center">
-                <ClockIcon className="h-6 w-6 text-yellow-600 mr-3" />
+                <ClockIcon className="h-6 w-6 text-yellow-600 mr-3 flex-shrink-0" />
                 <div>
                   <h3 className="text-lg font-semibold text-yellow-800">
                     {licenseAlerts.filter(alert => !alert.isExpired).length} License Expiring Soon
@@ -312,10 +315,10 @@ const Dashboard = () => {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <Link to="/vehicles" className="bg-white p-6 rounded-lg shadow-md block hover:shadow-lg transition-shadow">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+        <Link to="/vehicles" className="bg-white p-4 md:p-6 rounded-lg shadow-sm block hover:shadow-md transition-shadow">
           <div className="flex items-center">
-            <TruckIcon className="h-8 w-8 text-blue-600 mr-3" />
+            <TruckIcon className="h-8 w-8 text-blue-600 mr-3 flex-shrink-0" />
             <div>
               <h3 className="text-sm font-medium text-gray-500">Total Vehicles</h3>
               <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
@@ -323,9 +326,9 @@ const Dashboard = () => {
           </div>
         </Link>
         
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
-            <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+            <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
               <div className="h-4 w-4 bg-green-600 rounded-full"></div>
             </div>
             <div>
@@ -335,9 +338,9 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
-            <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+            <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
               <div className="h-4 w-4 bg-yellow-600 rounded-full"></div>
             </div>
             <div>
@@ -347,9 +350,9 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
-            <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
+            <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
               <div className="h-4 w-4 bg-red-600 rounded-full"></div>
             </div>
             <div>
@@ -359,9 +362,9 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
-            <ClockIcon className="h-8 w-8 text-orange-600 mr-3" />
+            <ClockIcon className="h-8 w-8 text-orange-600 mr-3 flex-shrink-0" />
             <div>
               <h3 className="text-sm font-medium text-gray-500">Insurance Expiring Soon</h3>
               <p className="text-2xl font-bold text-orange-600">{stats.insuranceExpiring}</p>
@@ -369,9 +372,9 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
-            <ExclamationTriangleIcon className="h-8 w-8 text-red-600 mr-3" />
+            <ExclamationTriangleIcon className="h-8 w-8 text-red-600 mr-3 flex-shrink-0" />
             <div>
               <h3 className="text-sm font-medium text-gray-500">Insurance Expired</h3>
               <p className="text-2xl font-bold text-red-600">{stats.insuranceExpired}</p>
@@ -379,9 +382,9 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
-            <ClockIcon className="h-8 w-8 text-purple-600 mr-3" />
+            <ClockIcon className="h-8 w-8 text-purple-600 mr-3 flex-shrink-0" />
             <div>
               <h3 className="text-sm font-medium text-gray-500">License Expiring Soon</h3>
               <p className="text-2xl font-bold text-purple-600">{stats.licenseExpiring}</p>
@@ -389,9 +392,9 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
           <div className="flex items-center">
-            <ExclamationTriangleIcon className="h-8 w-8 text-pink-600 mr-3" />
+            <ExclamationTriangleIcon className="h-8 w-8 text-pink-600 mr-3 flex-shrink-0" />
             <div>
               <h3 className="text-sm font-medium text-gray-500">License Expired</h3>
               <p className="text-2xl font-bold text-pink-600">{stats.licenseExpired}</p>
@@ -400,30 +403,33 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Recent Vehicles */}
         {activeFilter === 'all' && (
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="p-4 md:p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-900">Recent Vehicles</h2>
               <Link 
                 to="/vehicles" 
-                className="text-blue-600 hover:text-blue-800 font-medium"
+                className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
               >
                 View All
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
               </Link>
             </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Vehicle
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Department
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                 </tr>
@@ -431,21 +437,21 @@ const Dashboard = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {Array.isArray(vehicles) && vehicles.length > 0 ? (
                   vehicles.slice(0, 5).map((vehicle, index) => (
-                    <tr key={vehicle.id || vehicle._id || index}>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <tr key={vehicle.id || vehicle._id || index} className="hover:bg-gray-50">
+                      <td className="px-3 md:px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
                             {vehicle.vehicleNumber}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-xs text-gray-500">
                             {vehicle.make} {vehicle.model}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {vehicle.department}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 md:px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(vehicle.status)}`}>
                           {vehicle.status}
                         </span>
@@ -454,7 +460,7 @@ const Dashboard = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="3" className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan="3" className="px-3 md:px-6 py-4 text-center text-gray-500">
                       No vehicles found
                     </td>
                   </tr>
@@ -467,8 +473,8 @@ const Dashboard = () => {
 
         {/* Insurance Expiry Alerts */}
         {(activeFilter === 'all' || activeFilter === 'insurance') && (
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="p-4 md:p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-900">Insurance Expiry Alerts</h2>
               {activeFilter === 'insurance' && (
                 <button 
@@ -483,7 +489,7 @@ const Dashboard = () => {
               )}
               {activeFilter === 'all' && <BellIcon className="h-6 w-6 text-gray-400" />}
             </div>
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             {insuranceAlerts.length === 0 ? (
               <p className="text-gray-500 text-center py-4">
                 No insurance expiry alerts
@@ -495,7 +501,7 @@ const Dashboard = () => {
                   .filter(alert => alert.isExpired)
                   .slice(0, 3)
                   .map((vehicle, index) => (
-                    <div key={`expired-insurance-${vehicle.id || vehicle._id || index}`} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                    <div key={`expired-insurance-${vehicle.id || vehicle._id || index}`} className="flex items-center justify-between p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
                       <div>
                         <div className="font-medium text-gray-900">{vehicle.vehicleNumber}</div>
                         <div className="text-sm text-red-600">
@@ -511,7 +517,7 @@ const Dashboard = () => {
                   .filter(alert => !alert.isExpired)
                   .slice(0, 3)
                   .map((vehicle, index) => (
-                    <div key={`expiring-insurance-${vehicle.id || vehicle._id || index}`} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                    <div key={`expiring-insurance-${vehicle.id || vehicle._id || index}`} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
                       <div>
                         <div className="font-medium text-gray-900">{vehicle.vehicleNumber}</div>
                         <div className="text-sm text-gray-600">
@@ -531,8 +537,8 @@ const Dashboard = () => {
 
         {/* License Expiry Alerts */}
         {(activeFilter === 'all' || activeFilter === 'license') && (
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="p-4 md:p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-900">License Expiry Alerts</h2>
               {activeFilter === 'license' && (
                 <button 
@@ -547,7 +553,7 @@ const Dashboard = () => {
               )}
               {activeFilter === 'all' && <BellIcon className="h-6 w-6 text-gray-400" />}
             </div>
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             {licenseAlerts.length === 0 ? (
               <p className="text-gray-500 text-center py-4">
                 No license expiry alerts
@@ -559,7 +565,7 @@ const Dashboard = () => {
                   .filter(alert => alert.isExpired)
                   .slice(0, 3)
                   .map((vehicle, index) => (
-                    <div key={`expired-license-${vehicle.id || vehicle._id || index}`} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                    <div key={`expired-license-${vehicle.id || vehicle._id || index}`} className="flex items-center justify-between p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
                       <div>
                         <div className="font-medium text-gray-900">{vehicle.vehicleNumber}</div>
                         <div className="text-sm text-red-600">
@@ -575,7 +581,7 @@ const Dashboard = () => {
                   .filter(alert => !alert.isExpired)
                   .slice(0, 3)
                   .map((vehicle, index) => (
-                    <div key={`expiring-license-${vehicle.id || vehicle._id || index}`} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                    <div key={`expiring-license-${vehicle.id || vehicle._id || index}`} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
                       <div>
                         <div className="font-medium text-gray-900">{vehicle.vehicleNumber}</div>
                         <div className="text-sm text-gray-600">
