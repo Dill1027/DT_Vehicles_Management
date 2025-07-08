@@ -17,6 +17,7 @@ const Dashboard = () => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [insuranceAlerts, setInsuranceAlerts] = useState([]);
+  const [licenseAlerts, setLicenseAlerts] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
     available: 0,
@@ -84,6 +85,7 @@ const Dashboard = () => {
       });
       
       setInsuranceAlerts(insuranceAlerts);
+      setLicenseAlerts(licenseAlerts);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -198,6 +200,41 @@ const Dashboard = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-yellow-800">
                     {insuranceAlerts.filter(alert => !alert.isExpired).length} Insurance Expiring Soon
+                  </h3>
+                  <p className="text-yellow-700"></p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Alert Cards for License */}
+      {licenseAlerts.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          {/* Expired License Alert */}
+          {licenseAlerts.filter(alert => alert.isExpired).length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <ExclamationTriangleIcon className="h-6 w-6 text-red-600 mr-3" />
+                <div>
+                  <h3 className="text-lg font-semibold text-red-800">
+                    {licenseAlerts.filter(alert => alert.isExpired).length} Expired License
+                  </h3>
+                  <p className="text-red-700">Immediate attention required</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Expiring Soon License Alert */}
+          {licenseAlerts.filter(alert => !alert.isExpired).length > 0 && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <ClockIcon className="h-6 w-6 text-yellow-600 mr-3" />
+                <div>
+                  <h3 className="text-lg font-semibold text-yellow-800">
+                    {licenseAlerts.filter(alert => !alert.isExpired).length} License Expiring Soon
                   </h3>
                   <p className="text-yellow-700"></p>
                 </div>
@@ -398,6 +435,57 @@ const Dashboard = () => {
                         <div className="font-medium text-gray-900">{vehicle.vehicleNumber}</div>
                         <div className="text-sm text-gray-600">
                           Insurance expiring in {vehicle.daysUntilExpiry} days
+                        </div>
+                      </div>
+                      <span className={`text-sm font-medium ${getExpiryUrgency(vehicle.daysUntilExpiry)}`}>
+                        {vehicle.daysUntilExpiry > 0 ? `${vehicle.daysUntilExpiry} days` : 'Expired'}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* License Expiry Alerts */}
+        <div className="bg-white rounded-lg shadow-md">
+          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-900">License Expiry Alerts</h2>
+            <BellIcon className="h-6 w-6 text-gray-400" />
+          </div>
+          <div className="p-6">
+            {licenseAlerts.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">
+                No license expiry alerts
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {/* Show expired license first */}
+                {licenseAlerts
+                  .filter(alert => alert.isExpired)
+                  .slice(0, 3)
+                  .map((vehicle, index) => (
+                    <div key={`expired-license-${vehicle.id || vehicle._id || index}`} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                      <div>
+                        <div className="font-medium text-gray-900">{vehicle.vehicleNumber}</div>
+                        <div className="text-sm text-red-600">
+                          License - Expired {Math.abs(vehicle.daysUntilExpiry)} days ago
+                        </div>
+                      </div>
+                      <span className="text-red-600 font-bold text-sm">EXPIRED</span>
+                    </div>
+                  ))}
+                
+                {/* Show expiring license */}
+                {licenseAlerts
+                  .filter(alert => !alert.isExpired)
+                  .slice(0, 3)
+                  .map((vehicle, index) => (
+                    <div key={`expiring-license-${vehicle.id || vehicle._id || index}`} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                      <div>
+                        <div className="font-medium text-gray-900">{vehicle.vehicleNumber}</div>
+                        <div className="text-sm text-gray-600">
+                          License expiring in {vehicle.daysUntilExpiry} days
                         </div>
                       </div>
                       <span className={`text-sm font-medium ${getExpiryUrgency(vehicle.daysUntilExpiry)}`}>
