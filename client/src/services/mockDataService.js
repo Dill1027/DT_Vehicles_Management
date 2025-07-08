@@ -7,20 +7,105 @@ const STORAGE_KEYS = {
   USERS: 'dt_users_data'
 };
 
-// Initialize with empty data if none exists
+// Initialize with sample data if none exists
 const initializeData = () => {
   if (!localStorage.getItem(STORAGE_KEYS.VEHICLES)) {
-    // Start with completely empty vehicles array
-    localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify([]));
+    // Start with sample vehicles for demo purposes
+    const sampleVehicles = [
+      {
+        id: '1',
+        _id: '1',
+        vehicleNumber: 'VH001',
+        type: 'Car',
+        make: 'Toyota',
+        model: 'Camry',
+        year: 2022,
+        status: 'Active',
+        fuelType: 'Petrol',
+        insuranceExpiry: '2024-12-15',
+        registrationExpiry: '2025-06-20',
+        lastMaintenanceDate: '2024-10-01',
+        nextMaintenanceDate: '2025-01-01',
+        mileage: 15000,
+        color: 'White',
+        licensePlate: 'ABC-123',
+        department: 'Administration',
+        notes: 'Executive vehicle',
+        createdAt: '2024-01-15T00:00:00Z'
+      },
+      {
+        id: '2',
+        _id: '2',
+        vehicleNumber: 'VH002',
+        type: 'Truck',
+        make: 'Ford',
+        model: 'F-150',
+        year: 2021,
+        status: 'Active',
+        fuelType: 'Diesel',
+        insuranceExpiry: '2024-11-30',
+        registrationExpiry: '2025-03-15',
+        lastMaintenanceDate: '2024-09-15',
+        nextMaintenanceDate: '2024-12-15',
+        mileage: 25000,
+        color: 'Blue',
+        licensePlate: 'XYZ-789',
+        department: 'Operations',
+        notes: 'Heavy duty truck for operations',
+        createdAt: '2024-02-01T00:00:00Z'
+      },
+      {
+        id: '3',
+        _id: '3',
+        vehicleNumber: 'VH003',
+        type: 'Van',
+        make: 'Mercedes',
+        model: 'Sprinter',
+        year: 2023,
+        status: 'Under Maintenance',
+        fuelType: 'Diesel',
+        insuranceExpiry: '2025-01-20',
+        registrationExpiry: '2025-08-10',
+        lastMaintenanceDate: '2024-11-01',
+        nextMaintenanceDate: '2025-02-01',
+        mileage: 8000,
+        color: 'White',
+        licensePlate: 'DEF-456',
+        department: 'Delivery',
+        notes: 'Delivery van - scheduled maintenance',
+        createdAt: '2024-03-10T00:00:00Z'
+      }
+    ];
+    localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(sampleVehicles));
   }
 
   if (!localStorage.getItem(STORAGE_KEYS.MAINTENANCE)) {
-    // Start with completely empty maintenance array
-    localStorage.setItem(STORAGE_KEYS.MAINTENANCE, JSON.stringify([]));
+    // Start with sample maintenance records
+    const sampleMaintenance = [
+      {
+        id: '1',
+        vehicleId: '1',
+        type: 'Oil Change',
+        date: '2024-10-01',
+        cost: 150,
+        notes: 'Regular oil change service',
+        nextDueDate: '2025-01-01'
+      },
+      {
+        id: '2',
+        vehicleId: '2',
+        type: 'Tire Replacement',
+        date: '2024-09-15',
+        cost: 800,
+        notes: 'All four tires replaced',
+        nextDueDate: '2025-09-15'
+      }
+    ];
+    localStorage.setItem(STORAGE_KEYS.MAINTENANCE, JSON.stringify(sampleMaintenance));
   }
 
   if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-    // Start with completely empty users array - no default demo user
+    // Start with empty users array - no default demo user
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([]));
   }
 };
@@ -103,13 +188,29 @@ export const mockVehicleService = {
   getVehicleStats: async () => {
     initializeData();
     const vehicles = JSON.parse(localStorage.getItem(STORAGE_KEYS.VEHICLES) || '[]');
+    
+    // Calculate insurance expiry alerts
+    const currentDate = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    
+    const insuranceExpiryAlerts = vehicles.filter(vehicle => {
+      if (vehicle.insuranceExpiry) {
+        const expiryDate = new Date(vehicle.insuranceExpiry);
+        return expiryDate <= thirtyDaysFromNow && expiryDate >= currentDate;
+      }
+      return false;
+    }).length;
+    
     const stats = {
-      total: vehicles.length,
-      active: vehicles.filter(v => v.status === 'Active').length,
-      inService: vehicles.filter(v => v.status === 'In Service').length,
-      outOfService: vehicles.filter(v => v.status === 'Out of Service').length,
-      retired: vehicles.filter(v => v.status === 'Retired').length,
-      pending: vehicles.filter(v => v.status === 'Pending').length
+      totalVehicles: vehicles.length,
+      activeVehicles: vehicles.filter(v => v.status === 'Active').length,
+      maintenanceVehicles: vehicles.filter(v => v.status === 'Under Maintenance').length,
+      outOfServiceVehicles: vehicles.filter(v => v.status === 'Out of Service').length,
+      inactiveVehicles: vehicles.filter(v => v.status === 'Inactive').length,
+      inServiceVehicles: vehicles.filter(v => v.status === 'In Service').length,
+      retiredVehicles: vehicles.filter(v => v.status === 'Retired').length,
+      insuranceExpiryAlerts
     };
     return { success: true, data: stats };
   },
