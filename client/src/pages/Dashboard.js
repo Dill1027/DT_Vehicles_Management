@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [insuranceAlerts, setInsuranceAlerts] = useState([]);
   const [licenseAlerts, setLicenseAlerts] = useState([]);
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'insurance', 'license'
   const [stats, setStats] = useState({
     total: 0,
     available: 0,
@@ -137,6 +138,16 @@ const Dashboard = () => {
     return 'text-yellow-600';
   };
 
+  // Function to handle clicking on alert cards
+  const handleFilterClick = (filterType) => {
+    // If the same filter is clicked again, reset to 'all'
+    if (activeFilter === filterType) {
+      setActiveFilter('all');
+    } else {
+      setActiveFilter(filterType);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -173,13 +184,48 @@ const Dashboard = () => {
           </button>
         </div>
       </div>
+      
+      {/* Active Filter Banner */}
+      {activeFilter !== 'all' && (
+        <div className={`mt-4 p-3 rounded-lg flex justify-between items-center ${
+          activeFilter === 'insurance' ? 'bg-blue-50 border border-blue-200' : 'bg-purple-50 border border-purple-200'
+        }`}>
+          <div className="flex items-center">
+            <BellIcon className={`h-5 w-5 mr-2 ${
+              activeFilter === 'insurance' ? 'text-blue-600' : 'text-purple-600'
+            }`} />
+            <span className={`font-medium ${
+              activeFilter === 'insurance' ? 'text-blue-700' : 'text-purple-700'
+            }`}>
+              Showing {activeFilter === 'insurance' ? 'Insurance' : 'License'} Expiry Alerts Only
+            </span>
+          </div>
+          <button 
+            onClick={() => setActiveFilter('all')} 
+            className={`px-3 py-1 rounded-md text-sm font-medium ${
+              activeFilter === 'insurance' 
+                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+            }`}
+          >
+            Show All
+          </button>
+        </div>
+      )}
 
       {/* Alert Cards */}
       {insuranceAlerts.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Expired Insurance Alert */}
           {insuranceAlerts.filter(alert => alert.isExpired).length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div 
+              className="bg-red-50 border border-red-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:bg-red-100 transition-all transform hover:scale-[1.01]"
+              onClick={() => handleFilterClick('insurance')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleFilterClick('insurance')}
+              aria-label="Filter by expired insurance"
+            >
               <div className="flex items-center">
                 <ExclamationTriangleIcon className="h-6 w-6 text-red-600 mr-3" />
                 <div>
@@ -194,14 +240,21 @@ const Dashboard = () => {
 
           {/* Expiring Soon Insurance Alert */}
           {insuranceAlerts.filter(alert => !alert.isExpired).length > 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div 
+              className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:bg-yellow-100 transition-all transform hover:scale-[1.01]"
+              onClick={() => handleFilterClick('insurance')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleFilterClick('insurance')}
+              aria-label="Filter by insurance expiring soon"
+            >
               <div className="flex items-center">
                 <ClockIcon className="h-6 w-6 text-yellow-600 mr-3" />
                 <div>
                   <h3 className="text-lg font-semibold text-yellow-800">
                     {insuranceAlerts.filter(alert => !alert.isExpired).length} Insurance Expiring Soon
                   </h3>
-                  <p className="text-yellow-700"></p>
+                  <p className="text-yellow-700">Click to view details</p>
                 </div>
               </div>
             </div>
@@ -214,7 +267,14 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           {/* Expired License Alert */}
           {licenseAlerts.filter(alert => alert.isExpired).length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div 
+              className="bg-red-50 border border-red-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:bg-red-100 transition-all transform hover:scale-[1.01]"
+              onClick={() => handleFilterClick('license')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleFilterClick('license')}
+              aria-label="Filter by expired license"
+            >
               <div className="flex items-center">
                 <ExclamationTriangleIcon className="h-6 w-6 text-red-600 mr-3" />
                 <div>
@@ -229,14 +289,21 @@ const Dashboard = () => {
 
           {/* Expiring Soon License Alert */}
           {licenseAlerts.filter(alert => !alert.isExpired).length > 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div 
+              className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 cursor-pointer hover:shadow-md hover:bg-yellow-100 transition-all transform hover:scale-[1.01]"
+              onClick={() => handleFilterClick('license')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handleFilterClick('license')}
+              aria-label="Filter by license expiring soon"
+            >
               <div className="flex items-center">
                 <ClockIcon className="h-6 w-6 text-yellow-600 mr-3" />
                 <div>
                   <h3 className="text-lg font-semibold text-yellow-800">
                     {licenseAlerts.filter(alert => !alert.isExpired).length} License Expiring Soon
                   </h3>
-                  <p className="text-yellow-700"></p>
+                  <p className="text-yellow-700">Click to view details</p>
                 </div>
               </div>
             </div>
@@ -335,16 +402,17 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Vehicles */}
-        <div className="bg-white rounded-lg shadow-md">
-          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900">Recent Vehicles</h2>
-            <Link 
-              to="/vehicles" 
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              View All
-            </Link>
-          </div>
+        {activeFilter === 'all' && (
+          <div className="bg-white rounded-lg shadow-md">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">Recent Vehicles</h2>
+              <Link 
+                to="/vehicles" 
+                className="text-blue-600 hover:text-blue-800 font-medium"
+              >
+                View All
+              </Link>
+            </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -395,13 +463,26 @@ const Dashboard = () => {
             </table>
           </div>
         </div>
+        )}
 
         {/* Insurance Expiry Alerts */}
-        <div className="bg-white rounded-lg shadow-md">
-          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900">Insurance Expiry Alerts</h2>
-            <BellIcon className="h-6 w-6 text-gray-400" />
-          </div>
+        {(activeFilter === 'all' || activeFilter === 'insurance') && (
+          <div className="bg-white rounded-lg shadow-md">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">Insurance Expiry Alerts</h2>
+              {activeFilter === 'insurance' && (
+                <button 
+                  onClick={() => setActiveFilter('all')} 
+                  className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
+                >
+                  <span className="mr-1">Show All</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              )}
+              {activeFilter === 'all' && <BellIcon className="h-6 w-6 text-gray-400" />}
+            </div>
           <div className="p-6">
             {insuranceAlerts.length === 0 ? (
               <p className="text-gray-500 text-center py-4">
@@ -446,13 +527,26 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+        )}
 
         {/* License Expiry Alerts */}
-        <div className="bg-white rounded-lg shadow-md">
-          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900">License Expiry Alerts</h2>
-            <BellIcon className="h-6 w-6 text-gray-400" />
-          </div>
+        {(activeFilter === 'all' || activeFilter === 'license') && (
+          <div className="bg-white rounded-lg shadow-md">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">License Expiry Alerts</h2>
+              {activeFilter === 'license' && (
+                <button 
+                  onClick={() => setActiveFilter('all')} 
+                  className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
+                >
+                  <span className="mr-1">Show All</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              )}
+              {activeFilter === 'all' && <BellIcon className="h-6 w-6 text-gray-400" />}
+            </div>
           <div className="p-6">
             {licenseAlerts.length === 0 ? (
               <p className="text-gray-500 text-center py-4">
@@ -497,6 +591,7 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );
