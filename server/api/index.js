@@ -118,15 +118,15 @@ app.get('/api/health/db', async (req, res) => {
 // Vehicle Schema (inline for serverless)
 const vehicleSchema = new mongoose.Schema({
   make: { type: String, required: true },
-  model: { type: String, required: true },
+  model: { type: String },
   year: { type: Number, required: true },
   licensePlate: { type: String, unique: true },
   vin: { type: String, unique: true },
   color: { type: String },
   status: { 
     type: String, 
-    enum: ['active', 'maintenance', 'out-of-service'], 
-    default: 'active' 
+    enum: ['Active', 'Inactive', 'In Service', 'Out of Service', 'Under Maintenance', 'Retired'], 
+    default: 'Active' 
   },
   mileage: { type: Number, default: 0 },
   fuelType: { 
