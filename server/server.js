@@ -145,12 +145,15 @@ if (!mongoUri) {
   process.exit(1);
 }
 
+console.log(`Attempting to connect to MongoDB: ${mongoUri.split('@')[1]}`); // Shows just the non-sensitive part
+
 mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
 .then(() => {
-  console.log('Connected to MongoDB');
+  console.log('✅ Connected to MongoDB successfully');
+  console.log(`📊 Database: ${mongoose.connection.db.databaseName}`);
   
   // Initialize notification service
   require('./services/notificationService');

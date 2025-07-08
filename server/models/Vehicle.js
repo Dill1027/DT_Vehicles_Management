@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
 
+// Enable debug mode for mongoose in development
+if (process.env.NODE_ENV === 'development') {
+  mongoose.set('debug', true);
+}
+
 const vehicleSchema = new mongoose.Schema({
   // Primary vehicle identifiers
   vehicleNumber: { 

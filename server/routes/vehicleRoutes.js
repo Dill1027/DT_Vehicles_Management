@@ -6,6 +6,7 @@ const Vehicle = require('../models/Vehicle');
 router.get('/', async (req, res) => {
   try {
     const vehicles = await Vehicle.find();
+    console.log(`Retrieved ${vehicles.length} vehicles from database`);
     res.json({
       success: true,
       data: vehicles
@@ -14,7 +15,8 @@ router.get('/', async (req, res) => {
     console.error('Error fetching vehicles:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching vehicles'
+      message: 'Error fetching vehicles',
+      error: error.message
     });
   }
 });
@@ -159,12 +161,14 @@ router.get('/:id', async (req, res) => {
 // Create new vehicle (no authentication required)
 router.post('/', async (req, res) => {
   try {
+    console.log('Creating new vehicle with data:', JSON.stringify(req.body, null, 2));
     const vehicle = new Vehicle(req.body);
-    await vehicle.save();
+    const savedVehicle = await vehicle.save();
+    console.log('Vehicle saved successfully:', savedVehicle._id);
     res.status(201).json({
       success: true,
       message: 'Vehicle created successfully',
-      data: vehicle
+      data: savedVehicle
     });
   } catch (error) {
     console.error('Error creating vehicle:', error);
@@ -175,9 +179,17 @@ router.post('/', async (req, res) => {
         errors: Object.values(error.errors).map(err => err.message)
       });
     }
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vehicle with this vehicle number already exists',
+        error: error.message
+      });
+    }
     res.status(500).json({
       success: false,
-      message: 'Error creating vehicle'
+      message: 'Error creating vehicle',
+      error: error.message
     });
   }
 });

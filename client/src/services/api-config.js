@@ -1,6 +1,6 @@
-// API configuration for DT Vehicles Management - Local Development Only
+// API configuration for DT Vehicles Management
 export const API_CONFIG = {
-  BASE_URL: '', // Not used - static data only
+  BASE_URL: 'http://localhost:5001', // Backend server URL
   TIMEOUT: 10000,
   ENVIRONMENT: 'development'
 };

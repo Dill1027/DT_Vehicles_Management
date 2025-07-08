@@ -5,8 +5,8 @@ import { toast } from 'react-hot-toast';
 const isDev = process.env.NODE_ENV === 'development';
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-// Set up API base URL - Static data only (no API needed)
-const API_BASE_URL = '';
+// Set up API base URL - Connect to backend server
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 // Debug logging
 console.log('🔗 API Configuration:', {
