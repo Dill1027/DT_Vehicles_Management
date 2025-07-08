@@ -166,23 +166,6 @@ const Dashboard = () => {
           </h1>
           <p className="text-gray-600">Deep Tec Engineering Vehicle Management Dashboard</p>
         </div>
-        
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => handleDownloadReport('summary')}
-            className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-          >
-            <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-            Vehicle Report
-          </button>
-          <button
-            onClick={() => handleDownloadReport('expiry')}
-            className="flex items-center px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors shadow-sm"
-          >
-            <ClockIcon className="h-5 w-5 mr-2" />
-            Expiry Report
-          </button>
-        </div>
       </div>
       
       {/* Active Filter Banner */}
@@ -215,6 +198,95 @@ const Dashboard = () => {
           </button>
         </div>
       )}
+      
+      {/* Stats Cards - Moved to top for better visibility */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+        <Link to="/vehicles" className="bg-white p-4 md:p-6 rounded-lg shadow-sm block hover:shadow-md transition-shadow">
+          <div className="flex items-center">
+            <TruckIcon className="h-8 w-8 text-blue-600 mr-3 flex-shrink-0" />
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Total Vehicles</h3>
+              <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
+            </div>
+          </div>
+        </Link>
+        
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+          <div className="flex items-center">
+            <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+              <div className="h-4 w-4 bg-green-600 rounded-full"></div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Available</h3>
+              <p className="text-2xl font-bold text-green-600">{stats.available}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+          <div className="flex items-center">
+            <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+              <div className="h-4 w-4 bg-yellow-600 rounded-full"></div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">In Use</h3>
+              <p className="text-2xl font-bold text-yellow-600">{stats.inUse}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+          <div className="flex items-center">
+            <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+              <div className="h-4 w-4 bg-red-600 rounded-full"></div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">In Maintenance</h3>
+              <p className="text-2xl font-bold text-red-600">{stats.maintenance}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+          <div className="flex items-center">
+            <ClockIcon className="h-8 w-8 text-orange-600 mr-3 flex-shrink-0" />
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Insurance Expiring Soon</h3>
+              <p className="text-2xl font-bold text-orange-600">{stats.insuranceExpiring}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+          <div className="flex items-center">
+            <ExclamationTriangleIcon className="h-8 w-8 text-red-600 mr-3 flex-shrink-0" />
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Insurance Expired</h3>
+              <p className="text-2xl font-bold text-red-600">{stats.insuranceExpired}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+          <div className="flex items-center">
+            <ClockIcon className="h-8 w-8 text-purple-600 mr-3 flex-shrink-0" />
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">License Expiring Soon</h3>
+              <p className="text-2xl font-bold text-purple-600">{stats.licenseExpiring}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+          <div className="flex items-center">
+            <ExclamationTriangleIcon className="h-8 w-8 text-pink-600 mr-3 flex-shrink-0" />
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">License Expired</h3>
+              <p className="text-2xl font-bold text-pink-600">{stats.licenseExpired}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Alert Cards */}
       {insuranceAlerts.length > 0 && (
@@ -314,94 +386,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-        <Link to="/vehicles" className="bg-white p-4 md:p-6 rounded-lg shadow-sm block hover:shadow-md transition-shadow">
-          <div className="flex items-center">
-            <TruckIcon className="h-8 w-8 text-blue-600 mr-3 flex-shrink-0" />
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Total Vehicles</h3>
-              <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
-            </div>
-          </div>
-        </Link>
-        
-        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-              <div className="h-4 w-4 bg-green-600 rounded-full"></div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Available</h3>
-              <p className="text-2xl font-bold text-green-600">{stats.available}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-              <div className="h-4 w-4 bg-yellow-600 rounded-full"></div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">In Use</h3>
-              <p className="text-2xl font-bold text-yellow-600">{stats.inUse}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-              <div className="h-4 w-4 bg-red-600 rounded-full"></div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">In Maintenance</h3>
-              <p className="text-2xl font-bold text-red-600">{stats.maintenance}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <ClockIcon className="h-8 w-8 text-orange-600 mr-3 flex-shrink-0" />
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Insurance Expiring Soon</h3>
-              <p className="text-2xl font-bold text-orange-600">{stats.insuranceExpiring}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <ExclamationTriangleIcon className="h-8 w-8 text-red-600 mr-3 flex-shrink-0" />
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Insurance Expired</h3>
-              <p className="text-2xl font-bold text-red-600">{stats.insuranceExpired}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <ClockIcon className="h-8 w-8 text-purple-600 mr-3 flex-shrink-0" />
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">License Expiring Soon</h3>
-              <p className="text-2xl font-bold text-purple-600">{stats.licenseExpiring}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <ExclamationTriangleIcon className="h-8 w-8 text-pink-600 mr-3 flex-shrink-0" />
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">License Expired</h3>
-              <p className="text-2xl font-bold text-pink-600">{stats.licenseExpired}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Recent Vehicles */}
@@ -598,6 +583,27 @@ const Dashboard = () => {
           </div>
         </div>
         )}
+      </div>
+      
+      {/* Report Generation Buttons */}
+      <div className="mt-8 bg-white p-6 rounded-lg shadow-sm">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Generate Reports</h2>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => handleDownloadReport('summary')}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+          >
+            <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
+            Vehicle Summary Report
+          </button>
+          <button
+            onClick={() => handleDownloadReport('expiry')}
+            className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors shadow-sm"
+          >
+            <ClockIcon className="h-5 w-5 mr-2" />
+            Expiry Alerts Report
+          </button>
+        </div>
       </div>
     </div>
   );
