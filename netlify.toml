@@ -5,9 +5,3 @@
 
 [build.environment]
   NODE_VERSION = "18"
-
-# SPA fallback routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
