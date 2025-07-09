@@ -8,7 +8,7 @@ const fetch = require('node-fetch');
 
 // Update these URLs to match your actual deployment
 const BACKEND_URL = 'https://server-akucfqon0-dill1027s-projects.vercel.app/api';
-const CLIENT_URL = 'https://dt-vehicles-client-a0zmg9j7k-dill1027s-projects.vercel.app';
+const CLIENT_URL = 'https://dt-vehicles-client-rcm690m3a-dill1027s-projects.vercel.app';
 
 async function testBackendConnection() {
   console.log('\n🔍 Testing backend connectivity...');

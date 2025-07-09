@@ -9,9 +9,10 @@ require('dotenv').config();
 // Import the MongoDB connection utility
 const { connectDB } = require('./utils/mongoConnect');
 
-// Import routes
+// Import routes and middleware
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const corsMiddleware = require('./middleware/corsMiddleware');
 
 // Create Express app
 const app = express();
@@ -23,25 +24,7 @@ app.use(helmet({
 
 // CORS configuration - permissive for deployment
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'https://dt-vehicles-client-a0zmg9j7k-dill1027s-projects.vercel.app',
-      'https://dt-vehicles-management.vercel.app'
-    ];
-    
-    // Allow all Vercel domains
-    if (origin.includes('.vercel.app') || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    
-    console.log('CORS blocked origin:', origin);
-    callback(null, true); // Allow all origins for now while debugging
-  },
+  origin: '*', // Allow all origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
@@ -51,6 +34,9 @@ app.use(cors({
 
 // Add preflight CORS handling for all routes
 app.options('*', cors());
+
+// Apply custom CORS middleware to all routes
+app.use(corsMiddleware);
 
 // Body parsing middleware
 app.use(express.json({ limit: '50mb' }));
@@ -83,6 +69,10 @@ app.use('/api/notifications', notificationRoutes);
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
+  // Add extra CORS headers for the health endpoint
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  
   try {
     await connectDB();
     
@@ -118,6 +108,10 @@ app.get('/api/health', async (req, res) => {
 
 // Root path handler
 app.get('/', (req, res) => {
+  // Add extra CORS headers for the root endpoint
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  
   res.status(200).json({
     message: 'DT Vehicles Management API',
     version: '1.0.0',

@@ -8,13 +8,28 @@
   ],
   "routes": [
     {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "simpleServer.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Max-Age": "86400"
+      }
+    },
+    {
       "src": "/(.*)",
       "dest": "simpleServer.js",
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
         "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With",
-        "Access-Control-Allow-Credentials": "true"
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Max-Age": "86400"
       }
     }
   ],
