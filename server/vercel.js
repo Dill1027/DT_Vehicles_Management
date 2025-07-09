@@ -2,12 +2,9 @@
 const serverless = require('serverless-http');
 const app = require('./serverVercel');
 
-// Configure serverless options for better error handling
+// Configure serverless options for better error handling with Vercel
 const serverlessOptions = {
-  provider: {
-    type: 'aws',
-    timeout: 10, // Timeout in seconds
-  },
+  provider: 'vercel',
   basePath: '', // Empty for root path handling
   request: {
     // Log unhandled errors
