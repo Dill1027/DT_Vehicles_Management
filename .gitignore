@@ -133,3 +133,4 @@ docker-compose.yml
 
 # Local Netlify folder
 .netlify
+.vercel

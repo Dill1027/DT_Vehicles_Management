@@ -1,5 +1,5 @@
 // API Configuration
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://server-lw0u8udpp-dill1027s-projects.vercel.app/api';
 
 // Vehicle Status Options
 export const VEHICLE_STATUS = {
