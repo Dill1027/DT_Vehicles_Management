@@ -4,6 +4,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
 
+// Import the enhanced MongoDB connection utility
+const { connectDB } = require('./utils/mongoConnect');
+
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 
@@ -30,32 +33,6 @@ app.use(cors(corsOptions));
 // Body parsing middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-// Database connection with retry logic for serverless environment
-const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) {
-    console.log('MongoDB already connected');
-    return;
-  }
-  
-  const mongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL;
-  
-  if (!mongoUri) {
-    throw new Error('MONGODB_URI environment variable is not set');
-  }
-  
-  try {
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000
-    });
-    console.log('MongoDB connected successfully');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw error;
-  }
-};
 
 // Handle MongoDB connection before each request
 app.use(async (req, res, next) => {
@@ -86,12 +63,27 @@ app.use('/api/notifications', notificationRoutes);
 app.get('/api/health', async (req, res) => {
   try {
     await connectDB();
+    
+    // Get MongoDB connection info
+    const dbState = mongoose.connection.readyState;
+    const dbStateText = {
+      0: 'disconnected',
+      1: 'connected',
+      2: 'connecting',
+      3: 'disconnecting',
+    }[dbState] || 'unknown';
+    
     res.status(200).json({
       status: 'OK',
       message: 'DT Vehicles Management API is running on Vercel',
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development',
-      database: 'connected'
+      database: {
+        state: dbStateText,
+        host: mongoose.connection.host,
+        name: mongoose.connection.name,
+      },
+      memoryUsage: process.memoryUsage(),
     });
   } catch (error) {
     res.status(500).json({
@@ -105,14 +97,34 @@ app.get('/api/health', async (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Server error:', err.stack);
-  res.status(500).json({
+  // Log the error with timestamp and request info
+  console.error(`[${new Date().toISOString()}] Error processing ${req.method} ${req.url}:`, err);
+  
+  // Determine if we should show detailed errors
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  // Create a structured error response
+  const errorResponse = {
     success: false,
     message: 'A server error has occurred',
-    error: process.env.NODE_ENV === 'production' ? 
+    error: isProduction ? 
       { code: '500', message: 'A server error has occurred' } : 
-      { code: '500', message: err.message, stack: err.stack }
-  });
+      { 
+        code: '500', 
+        message: err.message, 
+        stack: err.stack,
+        path: req.path,
+        method: req.method
+      }
+  };
+  
+  // Add additional context for MongoDB errors
+  if (err.name === 'MongoError' || err.name === 'MongoServerSelectionError') {
+    errorResponse.error.type = 'database';
+    errorResponse.message = 'Database error occurred';
+  }
+  
+  res.status(500).json(errorResponse);
 });
 
 // 404 handler
