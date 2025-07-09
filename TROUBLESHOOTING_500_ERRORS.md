@@ -18,8 +18,9 @@ The most common cause of 500 errors is database connection issues.
    - Go to Settings > Environment Variables
    - Check that `MONGODB_URI` is correctly set to:
      ```
-     mongodb://atlas-sql-686d124a38fca47bb3f5d833-jl0thv.a.query.mongodb.net/dt_vehicles_management?ssl=true&authSource=admin
+     mongodb+srv://prabhathdilshan2001:1234@as.gp7z1.mongodb.net/dt_vehicles_management
      ```
+   - Ensure you're using the correct database name (`dt_vehicles_management` not `socialmedia`)
 
 2. **Check MongoDB Atlas Network Access**:
    - Log in to MongoDB Atlas
@@ -38,14 +39,22 @@ Vercel logs will show the exact error message from your serverless function:
 
 ## Step 3: Test MongoDB Connection Manually
 
-If you're still having issues, try connecting to MongoDB manually from your local machine:
+If you're still having issues, try testing the MongoDB connection with our script:
+
+```bash
+# Run our test connection script
+cd server
+node testConnection.js
+```
+
+Or connect manually using the MongoDB shell:
 
 ```bash
 # Install MongoDB CLI tools if needed
 brew install mongodb-community-shell
 
 # Connect to your MongoDB database
-mongo "mongodb://atlas-sql-686d124a38fca47bb3f5d833-jl0thv.a.query.mongodb.net/dt_vehicles_management?ssl=true&authSource=admin"
+mongo "mongodb+srv://prabhathdilshan2001:1234@as.gp7z1.mongodb.net/dt_vehicles_management"
 ```
 
 If this fails, it may indicate an issue with the connection string or network access.
