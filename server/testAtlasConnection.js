@@ -1,12 +1,12 @@
-// Test MongoDB Atlas SQL connection
+// Test MongoDB Atlas connection
 require('dotenv').config();
 const mongoose = require('mongoose');
 
 async function testAtlasConnection() {
-  console.log('Testing MongoDB Atlas SQL connection...');
+  console.log('Testing MongoDB Atlas connection...');
   
-  // Use the Atlas SQL connection string directly
-  const uri = 'mongodb://atlas-sql-686d124a38fca47bb3f5d833-jl0thv.a.query.mongodb.net/dt_vehicles_management?ssl=true&authSource=admin';
+  // Use the Atlas connection string directly
+  const uri = 'mongodb+srv://prabhathdilshan2001:1234@as.gp7z1.mongodb.net/dt_vehicles_management?retryWrites=true&w=majority';
   
   try {
     console.log('Connecting to MongoDB Atlas...');
