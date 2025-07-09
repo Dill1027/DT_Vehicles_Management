@@ -1,7 +1,7 @@
 {
   "version": 2,
   "env": {
-    "REACT_APP_API_URL": "https://server-akucfqon0-dill1027s-projects.vercel.app/api"
+    "REACT_APP_API_URL": "https://server-j5499cvz6-dill1027s-projects.vercel.app/api"
   },
   "builds": [
     {
