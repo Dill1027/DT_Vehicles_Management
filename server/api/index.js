@@ -2,22 +2,31 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
+require('dotenv').config();
+
+// Import the enhanced MongoDB connection utility
+const { connectDB } = require('../utils/mongoConnect');
+
+// Import routes
+const vehicleRoutes = require('../routes/vehicleRoutes');
+const notificationRoutes = require('../routes/notificationRoutes');
 
 const app = express();
 
-// Add simple authentication bypass
-app.use((req, res, next) => {
-  // Skip authentication for health checks
-  if (req.path === '/api/health' || req.path === '/health') {
-    return next();
-  }
-  next();
-});
+// Security middleware with Cross-Origin Resource Policy configuration
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 
-// Enhanced CORS configuration
+// CORS configuration - permissive for deployment
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
+  origin: '*', // Allow all origins for testing
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+  exposedHeaders: ['Content-Length', 'Content-Type', 'Authorization'],
+};
     if (!origin) return callback(null, true);
     
     const allowedOrigins = [
