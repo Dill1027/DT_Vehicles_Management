@@ -23,11 +23,34 @@ app.use(helmet({
 
 // CORS configuration - permissive for deployment
 app.use(cors({
-  origin: '*', // Allow all origins for simplicity
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://dt-vehicles-client-a0zmg9j7k-dill1027s-projects.vercel.app',
+      'https://dt-vehicles-management.vercel.app'
+    ];
+    
+    // Allow all Vercel domains
+    if (origin.includes('.vercel.app') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    console.log('CORS blocked origin:', origin);
+    callback(null, true); // Allow all origins for now while debugging
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
+  optionsSuccessStatus: 204
 }));
+
+// Add preflight CORS handling for all routes
+app.options('*', cors());
 
 // Body parsing middleware
 app.use(express.json({ limit: '50mb' }));
