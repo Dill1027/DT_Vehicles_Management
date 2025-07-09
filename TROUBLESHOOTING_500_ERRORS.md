@@ -18,9 +18,15 @@ The most common cause of 500 errors is database connection issues.
    - Go to Settings > Environment Variables
    - Check that `MONGODB_URI` is correctly set to:
      ```
-     mongodb+srv://prabhathdilshan2001:1234@as.gp7z1.mongodb.net/dt_vehicles_management
+     mongodb://atlas-sql-686d124a38fca47bb3f5d833-jl0thv.a.query.mongodb.net/dt_vehicles_management?ssl=true&authSource=admin
      ```
-   - Ensure you're using the correct database name (`dt_vehicles_management` not `socialmedia`)
+   - Ensure you're using the correct database name (`dt_vehicles_management`)
+   - **Important**: For MongoDB Atlas SQL connections, you need to add authentication credentials:
+     - Set `MONGODB_USERNAME` and `MONGODB_PASSWORD` environment variables with your Atlas credentials
+     - Alternatively, insert them directly in the connection string:
+     ```
+     mongodb://username:password@atlas-sql-686d124a38fca47bb3f5d833-jl0thv.a.query.mongodb.net/dt_vehicles_management?ssl=true&authSource=admin
+     ```
 
 2. **Check MongoDB Atlas Network Access**:
    - Log in to MongoDB Atlas
@@ -54,7 +60,7 @@ Or connect manually using the MongoDB shell:
 brew install mongodb-community-shell
 
 # Connect to your MongoDB database
-mongo "mongodb+srv://prabhathdilshan2001:1234@as.gp7z1.mongodb.net/dt_vehicles_management"
+mongo "mongodb://atlas-sql-686d124a38fca47bb3f5d833-jl0thv.a.query.mongodb.net/dt_vehicles_management?ssl=true&authSource=admin"
 ```
 
 If this fails, it may indicate an issue with the connection string or network access.

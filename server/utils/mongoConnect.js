@@ -34,12 +34,20 @@ const connectDB = async () => {
 
   // Get MongoDB URI from environment variables with fallback
   // IMPORTANT: Hardcoded URI is used as fallback for local development only
-  const uri = process.env.MONGODB_URI || process.env.DATABASE_URL || 
-    'mongodb+srv://prabhathdilshan2001:1234@as.gp7z1.mongodb.net/dt_vehicles_management';
+  let uri = process.env.MONGODB_URI || process.env.DATABASE_URL || 
+    'mongodb://atlas-sql-686d124a38fca47bb3f5d833-jl0thv.a.query.mongodb.net/dt_vehicles_management?ssl=true&authSource=admin';
   
   if (!uri) {
     console.error('No MongoDB URI provided. Set MONGODB_URI environment variable.');
     throw new Error('MongoDB URI not found in environment variables');
+  }
+  
+  // Add authentication if credentials are provided and not already in the URI
+  const username = process.env.MONGODB_USERNAME;
+  const password = process.env.MONGODB_PASSWORD;
+  if (username && password && uri.startsWith('mongodb://') && !uri.includes('@')) {
+    uri = uri.replace('mongodb://', `mongodb://${username}:${password}@`);
+    console.log('Added authentication credentials to MongoDB URI');
   }
 
   try {
