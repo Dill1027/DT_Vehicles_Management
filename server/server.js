@@ -49,6 +49,9 @@ app.use(cors(corsOptions));
 // Handle preflight requests
 app.options('*', cors());
 
+// Trust proxy for Vercel deployment
+app.set('trust proxy', 1);
+
 // Rate limiting - more lenient for development
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
