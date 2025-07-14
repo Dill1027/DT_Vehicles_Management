@@ -94,34 +94,45 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes - wrap them to ensure database connection
-app.use('/api/vehicles', async (req, res, next) => {
-  try {
-    await connectToDatabase();
-    next();
-  } catch (error) {
-    console.error('Database connection failed for vehicles route:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Database connection failed',
-      error: error.message
-    });
-  }
-}, vehicleRoutes);
+// Test endpoint to debug routing
+app.get('/', (req, res) => {
+  res.json({
+    message: 'DT Vehicles Backend API is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    availableRoutes: [
+      'GET /api/health',
+      'GET /api/vehicles',
+      'GET /api/vehicles/stats',
+      'GET /api/notifications/insurance-expiry',
+      'GET /api/notifications/license-expiry'
+    ]
+  });
+});
 
-app.use('/api/notifications', async (req, res, next) => {
+// Initialize database connection on startup
+connectToDatabase().catch(console.error);
+
+// Simple middleware to ensure database is connected
+app.use('/api', async (req, res, next) => {
   try {
-    await connectToDatabase();
+    if (mongoose.connection.readyState !== 1) {
+      await connectToDatabase();
+    }
     next();
   } catch (error) {
-    console.error('Database connection failed for notifications route:', error);
+    console.error('Database connection failed:', error);
     res.status(500).json({
       success: false,
       message: 'Database connection failed',
       error: error.message
     });
   }
-}, notificationRoutes);
+});
+
+// Routes
+app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
@@ -213,9 +224,7 @@ async function connectToDatabase() {
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
       socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-      maxPoolSize: 10, // Maintain up to 10 socket connections
-      bufferCommands: false, // Disable mongoose buffering
-      bufferMaxEntries: 0 // Disable mongoose buffering
+      maxPoolSize: 10 // Maintain up to 10 socket connections
     });
 
     console.log('✅ Connected to MongoDB successfully');
@@ -226,9 +235,6 @@ async function connectToDatabase() {
     throw error;
   }
 }
-
-// Initialize database connection
-connectToDatabase().catch(console.error);
 
 // For local development, start the server
 if (process.env.NODE_ENV !== 'production') {
