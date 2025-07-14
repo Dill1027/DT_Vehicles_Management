@@ -15,14 +15,16 @@ const PORT = process.env.PORT || 5002; // Changed to 5002 to match client config
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - local development only
+// CORS configuration - supports both local development and production
 const corsOptions = {
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001'
-  ],
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL || 'https://your-app.vercel.app'] 
+    : [
+        'http://localhost:3000',
+        'http://localhost:3001', 
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001'
+      ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
