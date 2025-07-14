@@ -94,14 +94,40 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
-app.use('/api/vehicles', vehicleRoutes);
-app.use('/api/notifications', notificationRoutes);
+// Routes - wrap them to ensure database connection
+app.use('/api/vehicles', async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    console.error('Database connection failed for vehicles route:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Database connection failed',
+      error: error.message
+    });
+  }
+}, vehicleRoutes);
+
+app.use('/api/notifications', async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    console.error('Database connection failed for notifications route:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Database connection failed',
+      error: error.message
+    });
+  }
+}, notificationRoutes);
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
-    // Check database connection
+    // Try to connect to database
+    await connectToDatabase();
     const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
     
     res.status(200).json({
@@ -117,7 +143,8 @@ app.get('/api/health', async (req, res) => {
     res.status(500).json({
       status: 'ERROR',
       message: 'Health check failed',
-      error: error.message
+      error: error.message,
+      mongodb: 'connection_failed'
     });
   }
 });
