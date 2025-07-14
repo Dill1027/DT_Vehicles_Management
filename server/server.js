@@ -15,41 +15,28 @@ const PORT = process.env.PORT || 5002; // Changed to 5002 to match client config
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - supports both local development and production
-const allowedOrigins = process.env.NODE_ENV === 'production' 
-  ? [
-      process.env.FRONTEND_URL || 'https://dt-vehicles-frontend.vercel.app',
-      'https://dt-vehicles-frontend.vercel.app',
-      'https://dt-vehicles-frontend-*.vercel.app' // Allow preview deployments
-    ]
-  : [
-      'http://localhost:3000',
-      'http://localhost:3001', 
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001'
-    ];
-
+// CORS configuration - simplified for Vercel deployment
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, etc.)
+    // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
-    if (process.env.NODE_ENV === 'production') {
-      // In production, check against allowed origins or Vercel preview URLs
-      if (allowedOrigins.some(allowed => origin.includes('dt-vehicles-frontend') && origin.includes('vercel.app'))) {
-        return callback(null, true);
-      }
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Not allowed by CORS'));
-    } else {
-      // In development, allow localhost origins
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Not allowed by CORS'));
+    // In production, allow Vercel domains and localhost for development
+    const allowedPatterns = [
+      'localhost',
+      '127.0.0.1',
+      'dt-vehicles-frontend',
+      'vercel.app'
+    ];
+    
+    const isAllowed = allowedPatterns.some(pattern => origin.includes(pattern));
+    
+    if (isAllowed) {
+      return callback(null, true);
     }
+    
+    console.log(`CORS blocked origin: ${origin}`);
+    return callback(new Error(`Origin ${origin} not allowed by CORS`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -112,14 +99,27 @@ app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    message: 'DT Vehicles Management API is running',
-    timestamp: new Date().toISOString(),
-    cors: 'enabled',
-    mongodb: 'connected'
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Check database connection
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    
+    res.status(200).json({
+      status: 'OK',
+      message: 'DT Vehicles Management API is running',
+      timestamp: new Date().toISOString(),
+      cors: 'enabled',
+      mongodb: dbStatus,
+      environment: process.env.NODE_ENV || 'development'
+    });
+  } catch (error) {
+    console.error('Health check error:', error);
+    res.status(500).json({
+      status: 'ERROR',
+      message: 'Health check failed',
+      error: error.message
+    });
+  }
 });
 
 // Test endpoint to debug CORS
@@ -127,17 +127,29 @@ app.get('/api/test', (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.status(200).json({
     message: 'Test endpoint working',
-    origin: req.get('Origin'),
-    timestamp: new Date().toISOString()
+    origin: req.headers.origin,
+    timestamp: new Date().toISOString(),
+    headers: req.headers
   });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
+// Global error handler
+app.use((error, req, res, next) => {
+  console.error('Global error handler:', error);
+  
+  if (error.message && error.message.includes('CORS')) {
+    return res.status(403).json({
+      success: false,
+      message: 'CORS error',
+      error: error.message,
+      origin: req.headers.origin
+    });
+  }
+  
   res.status(500).json({
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'production' ? {} : err.message
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'production' ? 'Something went wrong' : error.message
   });
 });
 
@@ -157,20 +169,42 @@ if (!mongoUri) {
   process.exit(1);
 }
 
-console.log(`Attempting to connect to MongoDB: ${mongoUri.split('@')[1]}`); // Shows just the non-sensitive part
+// For Vercel, we need to connect to MongoDB on each request
+// This is a connection management for serverless environments
+let cachedConnection = null;
 
-mongoose.connect(mongoUri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => {
-  console.log('✅ Connected to MongoDB successfully');
-  console.log(`📊 Database: ${mongoose.connection.db.databaseName}`);
-  
-  // Initialize notification service
-  require('./services/notificationService');
-  console.log('Notification service initialized');
-  
+async function connectToDatabase() {
+  if (cachedConnection && mongoose.connection.readyState === 1) {
+    return cachedConnection;
+  }
+
+  try {
+    console.log(`Attempting to connect to MongoDB...`);
+    
+    const connection = await mongoose.connect(mongoUri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+      maxPoolSize: 10, // Maintain up to 10 socket connections
+      bufferCommands: false, // Disable mongoose buffering
+      bufferMaxEntries: 0 // Disable mongoose buffering
+    });
+
+    console.log('✅ Connected to MongoDB successfully');
+    cachedConnection = connection;
+    return connection;
+  } catch (error) {
+    console.error('Database connection error:', error);
+    throw error;
+  }
+}
+
+// Initialize database connection
+connectToDatabase().catch(console.error);
+
+// For local development, start the server
+if (process.env.NODE_ENV !== 'production') {
   const server = app.listen(PORT, () => {
     console.log(`🚀 Deep Tec Vehicle Management Server is running on port ${PORT}`);
     console.log(`📡 API Base URL: http://localhost:${PORT}/api`);
@@ -187,10 +221,6 @@ mongoose.connect(mongoUri, {
       process.exit(1);
     }
   });
-})
-.catch((error) => {
-  console.error('Database connection error:', error);
-  process.exit(1);
-});
+}
 
 module.exports = app;
