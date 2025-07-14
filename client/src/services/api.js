@@ -6,7 +6,7 @@ const isDev = process.env.NODE_ENV === 'development';
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 // Set up API base URL - Connect to backend server
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002/api';
 
 // Debug logging
 console.log('🔗 API Configuration:', {
