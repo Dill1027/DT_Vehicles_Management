@@ -10,35 +10,21 @@ const vehicleRoutes = require('./routes/vehicleRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 5001; // Changed from 5000 to 5001
+const PORT = process.env.PORT || 5002; // Changed to 5002 to match client config
 
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - simplified for Vercel serverless compatibility
+// CORS configuration - simplified for local development
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001',
-      'https://dtvehicledetails.netlify.app',
-      'https://dt-vehicles-management.vercel.app'
-    ];
-    
-    // Allow all Vercel domains
-    if (origin.includes('.vercel.app') || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    
-    // Log the origin for debugging
-    console.log('CORS blocked origin:', origin);
-    callback(null, true); // Allow all origins for now to debug
-  },
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    'https://dtvehicledetails.netlify.app',
+    'https://dt-vehicles-management.vercel.app'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
