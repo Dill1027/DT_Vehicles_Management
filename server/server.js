@@ -16,15 +16,41 @@ const PORT = process.env.PORT || 5002; // Changed to 5002 to match client config
 app.use(helmet());
 
 // CORS configuration - supports both local development and production
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? [
+      process.env.FRONTEND_URL || 'https://dt-vehicles-frontend.vercel.app',
+      'https://dt-vehicles-frontend.vercel.app',
+      'https://dt-vehicles-frontend-*.vercel.app' // Allow preview deployments
+    ]
+  : [
+      'http://localhost:3000',
+      'http://localhost:3001', 
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001'
+    ];
+
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://your-app.vercel.app'] 
-    : [
-        'http://localhost:3000',
-        'http://localhost:3001', 
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:3001'
-      ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (process.env.NODE_ENV === 'production') {
+      // In production, check against allowed origins or Vercel preview URLs
+      if (allowedOrigins.some(allowed => origin.includes('dt-vehicles-frontend') && origin.includes('vercel.app'))) {
+        return callback(null, true);
+      }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    } else {
+      // In development, allow localhost origins
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],

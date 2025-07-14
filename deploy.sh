@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Deployment script for Vercel
-echo "🚀 Preparing for Vercel deployment..."
+# Separate Deployment script for Vercel
+echo "🚀 Preparing for SEPARATE Vercel deployment..."
 
 # Check if git is clean
 if [[ -n $(git status --porcelain) ]]; then
@@ -10,43 +10,29 @@ if [[ -n $(git status --porcelain) ]]; then
   exit 1
 fi
 
-# Install dependencies
-echo "📦 Installing dependencies..."
-npm run install:all
-
-# Build the client
-echo "🏗️  Building client..."
-cd client
-npm run build
-cd ..
-
-# Test if build was successful
-if [ ! -d "client/build" ]; then
-  echo "❌ Build failed! client/build directory not found."
-  exit 1
-fi
-
-echo "✅ Build successful!"
-echo "📁 Build output size:"
-du -sh client/build
-
+echo "� SEPARATE DEPLOYMENT PROCESS"
+echo "=============================="
 echo ""
-echo "🎯 Ready for Vercel deployment!"
+echo "This project is configured for SEPARATE frontend and backend deployment."
 echo ""
-echo "Next steps:"
-echo "1. Push your changes to GitHub"
-echo "2. Deploy using Vercel dashboard or CLI:"
-echo "   - Dashboard: https://vercel.com/dashboard"
-echo "   - CLI: vercel"
+echo "🎯 STEP 1: Deploy Backend First"
+echo "  cd server"
+echo "  ./deploy-backend.sh"
+echo "  vercel"
 echo ""
-echo "3. Set up these environment variables in Vercel:"
-echo "   Backend:"
-echo "   - NODE_ENV=production"
-echo "   - MONGODB_URI=your_mongodb_connection_string"
-echo "   - JWT_SECRET=your_jwt_secret"
-echo "   - FRONTEND_URL=https://your-app.vercel.app"
+echo "🎯 STEP 2: Deploy Frontend Second"
+echo "  cd client"
+echo "  ./deploy-frontend.sh"
+echo "  vercel"
 echo ""
-echo "   Frontend:"
-echo "   - REACT_APP_API_URL=https://your-app.vercel.app/api"
-echo "   - REACT_APP_USE_STATIC_DATA=false"
-echo "   - REACT_APP_NODE_ENV=production"
+echo "🎯 STEP 3: Update URLs"
+echo "  - Update backend FRONTEND_URL with actual frontend URL"
+echo "  - Update frontend REACT_APP_API_URL with actual backend URL"
+echo ""
+echo "📚 See SEPARATE_DEPLOYMENT.md for detailed instructions"
+echo ""
+echo "✅ Benefits of separate deployment:"
+echo "   • Independent scaling"
+echo "   • Better team workflow"
+echo "   • Performance optimization"
+echo "   • Easier debugging"
