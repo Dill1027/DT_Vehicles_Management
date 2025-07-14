@@ -128,9 +128,8 @@ curl "http://localhost:5002/api/notifications/insurance-expiry?days=365"
 
 1. **Database Integration**: Connect to MongoDB when needed
 2. **Authentication**: Add user authentication if required
-3. **Production Deployment**: Deploy to Netlify/Vercel when ready
-4. **Error Monitoring**: Add comprehensive logging
-5. **Testing**: Add unit and integration tests
+3. **Error Monitoring**: Add comprehensive logging
+4. **Testing**: Add unit and integration tests
 
 ---
 

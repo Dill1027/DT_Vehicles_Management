@@ -15,15 +15,13 @@ const PORT = process.env.PORT || 5002; // Changed to 5002 to match client config
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - simplified for local development
+// CORS configuration - local development only
 const corsOptions = {
   origin: [
     'http://localhost:3000',
     'http://localhost:3001',
     'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-    'https://dtvehicledetails.netlify.app',
-    'https://dt-vehicles-management.vercel.app'
+    'http://127.0.0.1:3001'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

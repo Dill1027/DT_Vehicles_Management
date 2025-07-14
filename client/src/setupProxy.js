@@ -1,7 +1,6 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
-// This proxy configuration is only used during local development
-// It will not be used in the Vercel deployment
+// This proxy configuration is used during local development
 module.exports = function(app) {
   // Only apply proxy in development
   if (process.env.NODE_ENV === 'development') {
