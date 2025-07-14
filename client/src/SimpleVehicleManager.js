@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { vehicleService } from './services/staticVehicleService';
+import { vehicleService } from './services/vehicleService';
 
 // Simple Vehicle Management Component (based on your boilerplate)
 function SimpleVehicleManager() {
