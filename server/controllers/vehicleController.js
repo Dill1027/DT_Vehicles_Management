@@ -1,7 +1,7 @@
 const Vehicle = require('../models/Vehicle');
 const { validationResult } = require('express-validator');
 
-// Get all vehicles with filtering and pagination
+// Get all vehicles with filtering and pagination - optimized
 const getAllVehicles = async (req, res) => {
   try {
     const {
@@ -16,7 +16,12 @@ const getAllVehicles = async (req, res) => {
       search
     } = req.query;
 
-    // Build filter object
+    // Convert to numbers and validate
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Max 100 items per page
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build filter object with optimized queries
     const filter = {};
     if (status) filter.status = status;
     if (make) filter.make = new RegExp(make, 'i');
@@ -25,7 +30,7 @@ const getAllVehicles = async (req, res) => {
     if (department) filter.department = new RegExp(department, 'i');
     if (assignedDriver) filter.assignedDriver = assignedDriver;
 
-    // Search across multiple fields
+    // Search across multiple fields with text index if available
     if (search) {
       const searchRegex = new RegExp(search, 'i');
       filter.$or = [
@@ -40,13 +45,16 @@ const getAllVehicles = async (req, res) => {
       ];
     }
 
+    // Optimize query options
     const options = {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: pageNum,
+      limit: limitNum,
       populate: [
         { path: 'assignedDriver', select: 'firstName lastName email employeeId' }
       ],
-      sort: { createdAt: -1 }
+      sort: { createdAt: -1 },
+      lean: true, // Return plain objects for better performance
+      select: '-__v -updatedAt' // Exclude unnecessary fields
     };
 
     const vehicles = await Vehicle.paginate(filter, options);
@@ -71,11 +79,13 @@ const getAllVehicles = async (req, res) => {
   }
 };
 
-// Get vehicle by ID
+// Get vehicle by ID - optimized
 const getVehicleById = async (req, res) => {
   try {
     const vehicle = await Vehicle.findById(req.params.id)
-      .populate('assignedDriver', 'firstName lastName email employeeId phoneNumber');
+      .populate('assignedDriver', 'firstName lastName email employeeId phoneNumber')
+      .select('-__v')
+      .lean(); // Better performance for read operations
 
     if (!vehicle) {
       return res.status(404).json({

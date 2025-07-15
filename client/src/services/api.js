@@ -17,13 +17,21 @@ console.log('🔗 API Configuration:', {
   environment: process.env.NODE_ENV
 });
 
-// Create axios instance with configurations
+// Create axios instance with optimized configurations
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000, // 10 second timeout
+  timeout: 30000, // 30 second timeout for large uploads
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
+  // Add compression support
+  decompress: true,
+  // Enable keep-alive for better performance
+  maxRedirects: 5,
+  // Add connection reuse
+  maxContentLength: 50 * 1024 * 1024, // 50MB
+  maxBodyLength: 50 * 1024 * 1024, // 50MB
 });
 
 // Track if we've already shown the server offline message

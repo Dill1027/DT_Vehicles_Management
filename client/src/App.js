@@ -1,47 +1,43 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import Vehicles from './pages/Vehicles';
-import VehicleDetail from './pages/VehicleDetail';
-import AddVehicle from './pages/AddVehicle';
-import EditVehicle from './pages/EditVehicle';
-import Reports from './pages/Reports';
-
+import LoadingSpinner from './components/LoadingSpinner';
+import { queryClient } from './services/queryConfig';
+// Performance monitoring is auto-initialized on import
+// eslint-disable-next-line no-unused-vars
+import performanceMonitor from './utils/performanceMonitor';
 // Clear any existing localStorage data to start fresh
 import './utils/clearStorage';
 
-
-
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+// Lazy load pages for better performance
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Vehicles = lazy(() => import('./pages/Vehicles'));
+const VehicleDetail = lazy(() => import('./pages/VehicleDetail'));
+const AddVehicle = lazy(() => import('./pages/AddVehicle'));
+const EditVehicle = lazy(() => import('./pages/EditVehicle'));
+const Reports = lazy(() => import('./pages/Reports'));
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <div className="App">
-          <Routes>
-            {/* Direct access to dashboard - no authentication required */}
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="vehicles" element={<Vehicles />} />
-              <Route path="vehicles/add" element={<AddVehicle />} />
-              <Route path="vehicles/:id" element={<VehicleDetail />} />
-              <Route path="vehicles/:id/edit" element={<EditVehicle />} />
-              <Route path="reports" element={<Reports />} />
-            </Route>
-          </Routes>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              {/* Direct access to dashboard - no authentication required */}
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="vehicles" element={<Vehicles />} />
+                <Route path="vehicles/add" element={<AddVehicle />} />
+                <Route path="vehicles/:id" element={<VehicleDetail />} />
+                <Route path="vehicles/:id/edit" element={<EditVehicle />} />
+                <Route path="reports" element={<Reports />} />
+              </Route>
+            </Routes>
+          </Suspense>
           <Toaster
             position="top-right"
             toastOptions={{
