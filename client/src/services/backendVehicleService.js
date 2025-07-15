@@ -77,6 +77,77 @@ export const vehicleService = {
     }
   },
 
+  // Create vehicle with multiple images
+  createVehicleWithImages: async (vehicleData, imageFiles) => {
+    try {
+      const formData = new FormData();
+      
+      // Add vehicle data
+      Object.keys(vehicleData).forEach(key => {
+        if (vehicleData[key] !== undefined && vehicleData[key] !== null) {
+          formData.append(key, vehicleData[key]);
+        }
+      });
+      
+      // Add image files
+      imageFiles.forEach((file) => {
+        formData.append('vehicleImages', file);
+      });
+
+      const response = await api.post('/vehicles/with-images', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      return {
+        success: true,
+        data: response.data.data || response.data,
+        message: response.data.message || 'Vehicle created successfully with images'
+      };
+    } catch (error) {
+      console.error('Error creating vehicle with images:', error);
+      throw error;
+    }
+  },
+
+  // Update vehicle with multiple images
+  updateVehicleWithImages: async (id, vehicleData, imageFiles, replaceImages = false) => {
+    try {
+      const formData = new FormData();
+      
+      // Add vehicle data
+      Object.keys(vehicleData).forEach(key => {
+        if (vehicleData[key] !== undefined && vehicleData[key] !== null) {
+          formData.append(key, vehicleData[key]);
+        }
+      });
+      
+      // Add replace images flag
+      formData.append('replaceImages', replaceImages.toString());
+      
+      // Add image files
+      imageFiles.forEach((file) => {
+        formData.append('vehicleImages', file);
+      });
+
+      const response = await api.put(`/vehicles/${id}/with-images`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      return {
+        success: true,
+        data: response.data.data || response.data,
+        message: response.data.message || 'Vehicle updated successfully with images'
+      };
+    } catch (error) {
+      console.error('Error updating vehicle with images:', error);
+      throw error;
+    }
+  },
+
   // Get vehicle statistics
   getVehicleStats: async () => {
     try {

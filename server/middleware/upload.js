@@ -37,17 +37,20 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Create multer upload instance with increased limits
+// Create multer upload instance with Vercel-optimized limits
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: { 
-    fileSize: 50 * 1024 * 1024, // 50MB limit (increased from 5MB)
-    fieldSize: 50 * 1024 * 1024, // 50MB field size limit
+    fileSize: 10 * 1024 * 1024, // 10MB per file (Vercel-optimized)
+    fieldSize: 10 * 1024 * 1024, // 10MB field size limit
     fields: 20, // Maximum number of non-file fields
-    files: 10 // Maximum number of file fields
+    files: 5 // Maximum 5 files (for 3 vehicle images + extras)
   }
 });
+
+// Multiple image upload middleware (up to 3 vehicle images)
+const uploadMultipleImages = upload.array('vehicleImages', 3);
 
 // Error handling middleware for multer
 const handleMulterError = (err, req, res, next) => {
@@ -55,13 +58,13 @@ const handleMulterError = (err, req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        message: 'File size too large. Maximum size is 5MB.'
+        message: 'File size too large. Maximum size is 10MB per image.'
       });
     }
     if (err.code === 'LIMIT_FILE_COUNT') {
       return res.status(400).json({
         success: false,
-        message: 'Too many files. Maximum 10 files allowed.'
+        message: 'Too many files. Maximum 3 vehicle images allowed.'
       });
     }
     if (err.code === 'LIMIT_UNEXPECTED_FILE') {
@@ -105,6 +108,7 @@ const getFileUrl = (req, relativePath) => {
 
 module.exports = {
   upload,
+  uploadMultipleImages,
   handleMulterError,
   deleteFile,
   getFileUrl,

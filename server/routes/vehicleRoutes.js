@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Vehicle = require('../models/Vehicle');
+const { uploadMultipleImages, handleMulterError, getFileUrl } = require('../middleware/upload');
 
 // Get all vehicles (no authentication required)
 router.get('/', async (req, res) => {
@@ -194,6 +195,75 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Create new vehicle with multiple images support
+router.post('/with-images', uploadMultipleImages, handleMulterError, async (req, res) => {
+  try {
+    console.log('Creating new vehicle with images:', {
+      body: req.body,
+      filesCount: req.files ? req.files.length : 0
+    });
+
+    // Process uploaded images
+    const vehicleImages = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file, index) => {
+        const imageUrl = getFileUrl(req, file.path);
+        vehicleImages.push({
+          url: imageUrl,
+          description: `Vehicle Image ${index + 1}`,
+          uploadDate: new Date()
+        });
+      });
+    }
+
+    // Create vehicle data with images
+    const vehicleData = {
+      ...req.body,
+      images: vehicleImages,
+      vehicleImages: vehicleImages.map(img => img.url), // For backward compatibility
+      imageUrl: vehicleImages.length > 0 ? vehicleImages[0].url : undefined // Primary image
+    };
+
+    const vehicle = new Vehicle(vehicleData);
+    const savedVehicle = await vehicle.save();
+    
+    console.log('Vehicle with images saved successfully:', {
+      id: savedVehicle._id,
+      imagesCount: savedVehicle.images.length
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Vehicle created successfully with ${vehicleImages.length} image(s)`,
+      data: savedVehicle
+    });
+  } catch (error) {
+    console.error('Error creating vehicle with images:', error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: Object.values(error.errors).map(err => err.message)
+      });
+    }
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vehicle with this vehicle number already exists',
+        error: error.message
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Error creating vehicle with images',
+      error: error.message
+    });
+  }
+});
+
 // Update vehicle (no authentication required)
 router.put('/:id', async (req, res) => {
   try {
@@ -225,6 +295,109 @@ router.put('/:id', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error updating vehicle'
+    });
+  }
+});
+
+// Update vehicle with multiple images support
+router.put('/:id/with-images', uploadMultipleImages, handleMulterError, async (req, res) => {
+  try {
+    console.log('Updating vehicle with images:', {
+      vehicleId: req.params.id,
+      body: req.body,
+      filesCount: req.files ? req.files.length : 0
+    });
+
+    // Get existing vehicle
+    const existingVehicle = await Vehicle.findById(req.params.id);
+    if (!existingVehicle) {
+      return res.status(404).json({
+        success: false,
+        message: 'Vehicle not found'
+      });
+    }
+
+    // Process new uploaded images
+    const newImages = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file, index) => {
+        const imageUrl = getFileUrl(req, file.path);
+        newImages.push({
+          url: imageUrl,
+          description: `Vehicle Image ${index + 1}`,
+          uploadDate: new Date()
+        });
+      });
+    }
+
+    // Determine how to handle images based on request
+    let updatedImages = existingVehicle.images || [];
+    let updatedVehicleImages = existingVehicle.vehicleImages || [];
+    let primaryImageUrl = existingVehicle.imageUrl;
+
+    if (req.body.replaceImages === 'true' || req.body.replaceImages === true) {
+      // Replace all existing images with new ones
+      updatedImages = newImages;
+      updatedVehicleImages = newImages.map(img => img.url);
+      primaryImageUrl = newImages.length > 0 ? newImages[0].url : undefined;
+    } else {
+      // Add new images to existing ones (max 3 total)
+      const combinedImages = [...updatedImages, ...newImages];
+      updatedImages = combinedImages.slice(0, 3); // Keep only first 3
+      updatedVehicleImages = updatedImages.map(img => img.url);
+      primaryImageUrl = updatedImages.length > 0 ? updatedImages[0].url : undefined;
+    }
+
+    // Update vehicle data
+    const updateData = {
+      ...req.body,
+      images: updatedImages,
+      vehicleImages: updatedVehicleImages,
+      imageUrl: primaryImageUrl
+    };
+
+    // Remove the replaceImages flag from the data to save
+    delete updateData.replaceImages;
+
+    const updated = await Vehicle.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    console.log('Vehicle with images updated successfully:', {
+      id: updated._id,
+      imagesCount: updated.images.length
+    });
+
+    res.json({
+      success: true,
+      message: `Vehicle updated successfully with ${updatedImages.length} image(s)`,
+      data: updated
+    });
+  } catch (error) {
+    console.error('Error updating vehicle with images:', error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: Object.values(error.errors).map(err => err.message)
+      });
+    }
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vehicle with this vehicle number already exists',
+        error: error.message
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Error updating vehicle with images',
+      error: error.message
     });
   }
 });

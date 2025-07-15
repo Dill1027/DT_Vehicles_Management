@@ -10,6 +10,7 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
     insuranceDate: '',
     insuranceExpiry: '',
     imageUrl: '',
+    images: [], // Array for multiple images
     notes: '',
     status: 'Available', // Available or In Maintenance
     fuelType: 'Petrol', // Diesel or Petrol
@@ -18,6 +19,8 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [selectedImages, setSelectedImages] = useState([]); // For preview purposes
+  const [imageFiles, setImageFiles] = useState([]); // Actual file objects
 
   useEffect(() => {
     if (vehicle) {
@@ -30,6 +33,7 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
         insuranceExpiry: vehicle.insuranceExpiry ? 
           new Date(vehicle.insuranceExpiry).toISOString().split('T')[0] : '',
         imageUrl: vehicle.imageUrl || '',
+        images: vehicle.images || [],
         notes: vehicle.notes || '',
         status: vehicle.status || 'Available',
         fuelType: vehicle.fuelType || 'Petrol',
@@ -37,6 +41,13 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
         lastMaintenanceDate: vehicle.lastMaintenanceDate ? 
           new Date(vehicle.lastMaintenanceDate).toISOString().split('T')[0] : ''
       });
+      
+      // Set existing images for preview
+      if (vehicle.images && vehicle.images.length > 0) {
+        setSelectedImages(vehicle.images.map(img => typeof img === 'string' ? img : img.url));
+      } else if (vehicle.imageUrl) {
+        setSelectedImages([vehicle.imageUrl]);
+      }
     }
   }, [vehicle]);
 
@@ -62,18 +73,67 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Create preview URL
+    const files = Array.from(e.target.files);
+    if (files.length > 3) {
+      setErrors(prev => ({
+        ...prev,
+        images: 'Maximum 3 images allowed'
+      }));
+      return;
+    }
+
+    // Clear any previous image errors
+    if (errors.images) {
+      setErrors(prev => ({
+        ...prev,
+        images: ''
+      }));
+    }
+
+    // Validate file sizes (10MB each)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const oversizedFiles = files.filter(file => file.size > maxSize);
+    if (oversizedFiles.length > 0) {
+      setErrors(prev => ({
+        ...prev,
+        images: 'Each image must be less than 10MB'
+      }));
+      return;
+    }
+
+    setImageFiles(files);
+
+    // Create preview URLs
+    const newPreviews = [];
+    files.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setFormData(prev => ({
-          ...prev,
-          imageUrl: e.target.result
-        }));
+        newPreviews.push(e.target.result);
+        if (newPreviews.length === files.length) {
+          setSelectedImages(newPreviews);
+          // Update primary image URL for backward compatibility
+          setFormData(prev => ({
+            ...prev,
+            imageUrl: newPreviews[0] || ''
+          }));
+        }
       };
       reader.readAsDataURL(file);
-    }
+    });
+  };
+
+  const removeImage = (indexToRemove) => {
+    const newSelectedImages = selectedImages.filter((_, index) => index !== indexToRemove);
+    const newImageFiles = imageFiles.filter((_, index) => index !== indexToRemove);
+    
+    setSelectedImages(newSelectedImages);
+    setImageFiles(newImageFiles);
+    
+    // Update primary image URL
+    setFormData(prev => ({
+      ...prev,
+      imageUrl: newSelectedImages[0] || ''
+    }));
   };
 
   const validateForm = () => {
@@ -118,17 +178,26 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
       console.log('Vehicle being saved:', vehicle); // Debug log
       console.log('Vehicle ID for update:', vehicleId); // Debug log
       console.log('Form data:', formData); // Debug log
+      console.log('Image files:', imageFiles); // Debug log
       
       if (vehicleId) {
-        // Update existing vehicle
-        console.log('Updating existing vehicle with ID:', vehicleId); // Debug log
-        const result = await vehicleService.updateVehicle(vehicleId, formData);
-        console.log('Update result:', result); // Debug log
+        // Update existing vehicle with images if any
+        if (imageFiles.length > 0) {
+          const result = await vehicleService.updateVehicleWithImages(vehicleId, formData, imageFiles);
+          console.log('Update with images result:', result); // Debug log
+        } else {
+          const result = await vehicleService.updateVehicle(vehicleId, formData);
+          console.log('Update result:', result); // Debug log
+        }
       } else {
-        // Create new vehicle
-        console.log('Creating new vehicle'); // Debug log
-        const result = await vehicleService.createVehicle(formData);
-        console.log('Create result:', result); // Debug log
+        // Create new vehicle with images if any
+        if (imageFiles.length > 0) {
+          const result = await vehicleService.createVehicleWithImages(formData, imageFiles);
+          console.log('Create with images result:', result); // Debug log
+        } else {
+          const result = await vehicleService.createVehicle(formData);
+          console.log('Create result:', result); // Debug log
+        }
       }
       onSave();
     } catch (error) {
@@ -346,25 +415,44 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
               </div>
             </div>
 
-            {/* Vehicle Image */}
+            {/* Vehicle Images - Multiple Upload */}
             <div className="mt-6">
-              <label htmlFor="vehicleImage" className="block text-sm font-medium text-gray-700 mb-2">
-                Vehicle Image
+              <label htmlFor="vehicleImages" className="block text-sm font-medium text-gray-700 mb-2">
+                Vehicle Images <span className="text-xs text-gray-500">(up to 3 images, max 10MB each)</span>
               </label>
               <input
                 type="file"
-                id="vehicleImage"
+                id="vehicleImages"
                 accept="image/*"
+                multiple
                 onChange={handleImageChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              {formData.imageUrl && (
+              {errors.images && <p className="mt-1 text-sm text-red-600">{errors.images}</p>}
+              
+              {/* Image Previews */}
+              {selectedImages.length > 0 && (
                 <div className="mt-4">
-                  <img
-                    src={formData.imageUrl}
-                    alt="Vehicle preview"
-                    className="w-32 h-32 object-cover rounded-md border border-gray-300"
-                  />
+                  <p className="text-sm font-medium text-gray-700 mb-2">Image Previews:</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    {selectedImages.map((imageUrl, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={imageUrl}
+                          alt={`Vehicle preview ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-md border border-gray-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                          ×
+                        </button>
+                        <p className="text-xs text-gray-500 mt-1 text-center">Image {index + 1}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
