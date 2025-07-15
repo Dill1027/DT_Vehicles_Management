@@ -53,11 +53,13 @@ const PORT = process.env.PORT || 5002; // Changed to 5002 to match client config
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - optimized for Vercel deployment
+// CORS configuration - enhanced for Vercel deployment
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
+    
+    console.log(`🔍 CORS check for origin: ${origin}`);
     
     // Allowed origins for production and development
     const allowedOrigins = [
@@ -81,6 +83,7 @@ const corsOptions = {
     });
     
     if (isExplicitlyAllowed) {
+      console.log(`✅ CORS allowed for origin: ${origin}`);
       return callback(null, true);
     }
     
@@ -89,6 +92,7 @@ const corsOptions = {
       const devPatterns = ['localhost', '127.0.0.1'];
       const isDevAllowed = devPatterns.some(pattern => origin.includes(pattern));
       if (isDevAllowed) {
+        console.log(`✅ CORS allowed for dev origin: ${origin}`);
         return callback(null, true);
       }
     }
@@ -114,8 +118,25 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Handle preflight requests
-app.options('*', cors());
+// Enhanced preflight handling
+app.options('*', (req, res) => {
+  console.log(`✈️ Preflight request from ${req.headers.origin} for ${req.url}`);
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.status(200).end();
+});
+
+// Additional CORS headers for all responses
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
+});
 
 // Trust proxy for Vercel deployment
 app.set('trust proxy', 1);
@@ -135,15 +156,15 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Body parsing middleware with increased limits for file uploads
+// Body parsing middleware with enhanced limits for Vercel
 app.use(express.json({ 
-  limit: '50mb',
+  limit: '10mb', // Reduced for Vercel compatibility
   parameterLimit: 50000,
   type: ['application/json', 'text/plain']
 }));
 app.use(express.urlencoded({ 
   extended: true, 
-  limit: '50mb',
+  limit: '10mb', // Reduced for Vercel compatibility
   parameterLimit: 50000
 }));
 
@@ -250,23 +271,37 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// Error handling middleware for common issues
+// Enhanced error handling middleware for common issues
 app.use((error, req, res, next) => {
-  // Handle payload too large errors
+  console.log(`🚨 Error intercepted:`, {
+    type: error.type,
+    code: error.code,
+    message: error.message,
+    origin: req.headers.origin,
+    method: req.method,
+    url: req.url
+  });
+
+  // Handle payload too large errors with better messaging
   if (error.type === 'entity.too.large') {
+    console.log(`📦 Payload too large from ${req.headers.origin}`);
     return res.status(413).json({
       success: false,
-      message: 'File size too large. Maximum allowed size is 50MB.',
-      error: 'PAYLOAD_TOO_LARGE'
+      message: 'Request payload too large. Please reduce file size to under 10MB.',
+      error: 'PAYLOAD_TOO_LARGE',
+      maxSize: '10MB',
+      suggestion: 'Try compressing images or reducing data size'
     });
   }
   
   // Handle CORS errors
-  if (error.message?.includes('CORS')) {
+  if (error.message?.includes('CORS') || error.code === 'CORS_ERROR') {
+    console.log(`🚫 CORS error for origin: ${req.headers.origin}`);
     return res.status(403).json({
       success: false,
-      message: 'CORS policy violation. Origin not allowed.',
-      error: 'CORS_ERROR'
+      message: 'Cross-origin request blocked. Origin not allowed.',
+      error: 'CORS_ERROR',
+      origin: req.headers.origin
     });
   }
   

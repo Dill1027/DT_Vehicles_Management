@@ -74,10 +74,38 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+// Response interceptor for enhanced error handling
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const { response, config, code } = error;
+    
+    console.log('🚨 API Error Details:', {
+      code,
+      status: response?.status,
+      message: error.message,
+      url: config?.url,
+      method: config?.method,
+      origin: window.location.origin
+    });
+
+    // Handle CORS errors specifically
+    if (error.message.includes('CORS') || error.message.includes('Access-Control')) {
+      console.error('🚫 CORS Error - Backend may not be allowing this origin');
+      if (!hasShownOfflineMessage) {
+        toast.error('Connection blocked - CORS policy error. Please contact support.');
+        hasShownOfflineMessage = true;
+      }
+      return Promise.reject(new Error('CORS policy blocked this request'));
+    }
+
+    // Handle 413 Payload Too Large
+    if (response?.status === 413) {
+      console.error('📦 Payload too large error');
+      toast.error('File too large. Please reduce size to under 10MB and try again.');
+      return Promise.reject(new Error('Request payload too large'));
+    }
+
     // Handle server connection issues
     if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
       if (isDev) {
