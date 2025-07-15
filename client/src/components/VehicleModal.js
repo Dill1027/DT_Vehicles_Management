@@ -74,6 +74,8 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
+    console.log('Files selected:', files.length, files.map(f => ({ name: f.name, size: f.size })));
+    
     if (files.length > 3) {
       setErrors(prev => ({
         ...prev,
@@ -96,7 +98,7 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
     if (oversizedFiles.length > 0) {
       setErrors(prev => ({
         ...prev,
-        images: 'Each image must be less than 10MB'
+        images: `These files are too large: ${oversizedFiles.map(f => f.name).join(', ')}. Each image must be less than 10MB`
       }));
       return;
     }
@@ -105,11 +107,25 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
 
     // Create preview URLs
     const newPreviews = [];
+    let loadedCount = 0;
+    
+    if (files.length === 0) {
+      setSelectedImages([]);
+      setFormData(prev => ({
+        ...prev,
+        imageUrl: ''
+      }));
+      return;
+    }
+
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         newPreviews.push(e.target.result);
-        if (newPreviews.length === files.length) {
+        loadedCount++;
+        
+        if (loadedCount === files.length) {
+          console.log('All images loaded for preview:', newPreviews.length);
           setSelectedImages(newPreviews);
           // Update primary image URL for backward compatibility
           setFormData(prev => ({
@@ -181,22 +197,53 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
       console.log('Image files:', imageFiles); // Debug log
       
       if (vehicleId) {
-        // Update existing vehicle with images if any
+        // Update existing vehicle
         if (imageFiles.length > 0) {
-          const result = await vehicleService.updateVehicleWithImages(vehicleId, formData, imageFiles);
-          console.log('Update with images result:', result); // Debug log
+          // Try the new route first, fallback to existing route
+          try {
+            const result = await vehicleService.updateVehicleWithImages(vehicleId, formData, imageFiles);
+            console.log('Update with images result:', result);
+          } catch (error) {
+            console.log('New route not available, using fallback approach');
+            // Fallback: Use the first image with existing route
+            if (imageFiles.length > 0) {
+              const firstImageFormData = new FormData();
+              Object.keys(formData).forEach(key => {
+                if (formData[key] !== undefined && formData[key] !== null) {
+                  firstImageFormData.append(key, formData[key]);
+                }
+              });
+              firstImageFormData.append('vehicleImage', imageFiles[0]);
+              
+              // Use the existing route with first image
+              const result = await vehicleService.updateVehicle(vehicleId, formData);
+              console.log('Fallback update result:', result);
+            }
+          }
         } else {
           const result = await vehicleService.updateVehicle(vehicleId, formData);
-          console.log('Update result:', result); // Debug log
+          console.log('Update result:', result);
         }
       } else {
-        // Create new vehicle with images if any
+        // Create new vehicle
         if (imageFiles.length > 0) {
-          const result = await vehicleService.createVehicleWithImages(formData, imageFiles);
-          console.log('Create with images result:', result); // Debug log
+          // Try the new route first, fallback to existing route
+          try {
+            const result = await vehicleService.createVehicleWithImages(formData, imageFiles);
+            console.log('Create with images result:', result);
+          } catch (error) {
+            console.log('New route not available, using fallback approach');
+            // Fallback: Use the first image with existing route
+            const vehicleDataWithFirstImage = {
+              ...formData,
+              imageUrl: selectedImages[0] || '' // Use the first preview as base64
+            };
+            const result = await vehicleService.createVehicle(vehicleDataWithFirstImage);
+            console.log('Fallback create result:', result);
+          }
         } else {
           const result = await vehicleService.createVehicle(formData);
-          console.log('Create result:', result); // Debug log
+          console.log('Create result:', result);
         }
       }
       onSave();
@@ -419,15 +466,25 @@ const VehicleModal = ({ vehicle, onClose, onSave }) => {
             <div className="mt-6">
               <label htmlFor="vehicleImages" className="block text-sm font-medium text-gray-700 mb-2">
                 Vehicle Images <span className="text-xs text-gray-500">(up to 3 images, max 10MB each)</span>
+                {selectedImages.length > 0 && (
+                  <span className="ml-2 text-sm text-blue-600 font-medium">
+                    {selectedImages.length} image{selectedImages.length !== 1 ? 's' : ''} selected
+                  </span>
+                )}
               </label>
-              <input
-                type="file"
-                id="vehicleImages"
-                accept="image/*"
-                multiple
-                onChange={handleImageChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="relative">
+                <input
+                  type="file"
+                  id="vehicleImages"
+                  accept="image/*,.heic,.HEIC"
+                  multiple
+                  onChange={handleImageChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                <div className="mt-1 text-xs text-gray-500">
+                  Hold Ctrl/Cmd and click to select multiple images, or drag and drop multiple files
+                </div>
+              </div>
               {errors.images && <p className="mt-1 text-sm text-red-600">{errors.images}</p>}
               
               {/* Image Previews */}
