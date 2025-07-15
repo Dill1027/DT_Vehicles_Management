@@ -9,39 +9,107 @@ const path = require('path');
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 
+// Database connection configuration
+const mongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL;
+
+if (!mongoUri) {
+  console.error('❌ MONGODB_URI environment variable is not set');
+  console.log('Please set MONGODB_URI in your .env file');
+  process.exit(1);
+}
+
+// For Vercel, we need to connect to MongoDB on each request
+// This is a connection management for serverless environments
+let cachedConnection = null;
+
+async function connectToDatabase() {
+  if (cachedConnection && mongoose.connection.readyState === 1) {
+    return cachedConnection;
+  }
+
+  try {
+    console.log(`Attempting to connect to MongoDB...`);
+    
+    const connection = await mongoose.connect(mongoUri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+      maxPoolSize: 10 // Maintain up to 10 socket connections
+    });
+
+    console.log('✅ Connected to MongoDB successfully');
+    cachedConnection = connection;
+    return connection;
+  } catch (error) {
+    console.error('Database connection error:', error);
+    throw error;
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 5002; // Changed to 5002 to match client config
 
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - simplified for Vercel deployment
+// CORS configuration - optimized for Vercel deployment
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
-    // In production, allow Vercel domains and localhost for development
-    const allowedPatterns = [
-      'localhost',
-      '127.0.0.1',
-      'dt-vehicles-frontend',
-      'vercel.app'
+    // Allowed origins for production and development
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001', 
+      'http://127.0.0.1:3000',
+      'https://dt-vehicles-frontend.vercel.app',
+      'https://dt-vehicles-management.vercel.app',
+      // Allow any vercel app domain for this project
+      /^https:\/\/dt-vehicles.*\.vercel\.app$/,
+      /^https:\/\/.*--dt-vehicles.*\.vercel\.app$/
     ];
     
-    const isAllowed = allowedPatterns.some(pattern => origin.includes(pattern));
+    // Check if origin is explicitly allowed
+    const isExplicitlyAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return origin === allowedOrigin;
+      }
+      // Handle regex patterns
+      return allowedOrigin.test(origin);
+    });
     
-    if (isAllowed) {
+    if (isExplicitlyAllowed) {
       return callback(null, true);
     }
     
-    console.log(`CORS blocked origin: ${origin}`);
-    return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    // For development, also allow localhost patterns
+    if (process.env.NODE_ENV === 'development') {
+      const devPatterns = ['localhost', '127.0.0.1'];
+      const isDevAllowed = devPatterns.some(pattern => origin.includes(pattern));
+      if (isDevAllowed) {
+        return callback(null, true);
+      }
+    }
+    
+    console.log(`🚫 CORS blocked origin: ${origin}`);
+    return callback(null, false); // Don't throw error, just deny
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-  optionsSuccessStatus: 200 // For legacy browser support
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'Accept', 
+    'Origin', 
+    'X-Requested-With',
+    'Cache-Control',
+    'Pragma'
+  ],
+  exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar'],
+  optionsSuccessStatus: 200,
+  preflightContinue: false
 };
 
 app.use(cors(corsOptions));
@@ -67,9 +135,17 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Body parsing middleware with increased limits for file uploads
+app.use(express.json({ 
+  limit: '50mb',
+  parameterLimit: 50000,
+  type: ['application/json', 'text/plain']
+}));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '50mb',
+  parameterLimit: 50000
+}));
 
 // Serve static files from uploads directory with enhanced CORS headers
 app.use('/uploads', (req, res, next) => {
@@ -174,11 +250,48 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// Error handling middleware for common issues
+app.use((error, req, res, next) => {
+  // Handle payload too large errors
+  if (error.type === 'entity.too.large') {
+    return res.status(413).json({
+      success: false,
+      message: 'File size too large. Maximum allowed size is 50MB.',
+      error: 'PAYLOAD_TOO_LARGE'
+    });
+  }
+  
+  // Handle CORS errors
+  if (error.message?.includes('CORS')) {
+    return res.status(403).json({
+      success: false,
+      message: 'CORS policy violation. Origin not allowed.',
+      error: 'CORS_ERROR'
+    });
+  }
+  
+  // Handle JSON parsing errors
+  if (error.type === 'entity.parse.failed') {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid JSON format in request body.',
+      error: 'JSON_PARSE_ERROR'
+    });
+  }
+  
+  console.error('🔥 Unhandled error:', error);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? error.message : 'INTERNAL_ERROR'
+  });
+});
+
 // Global error handler
 app.use((error, req, res, next) => {
   console.error('Global error handler:', error);
   
-  if (error.message && error.message.includes('CORS')) {
+  if (error.message?.includes('CORS')) {
     return res.status(403).json({
       success: false,
       message: 'CORS error',
@@ -200,44 +313,6 @@ app.use('*', (req, res) => {
     message: 'Route not found'
   });
 });
-
-// Database connection
-const mongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL;
-
-if (!mongoUri) {
-  console.error('❌ MONGODB_URI environment variable is not set');
-  console.log('Please set MONGODB_URI in your .env file');
-  process.exit(1);
-}
-
-// For Vercel, we need to connect to MongoDB on each request
-// This is a connection management for serverless environments
-let cachedConnection = null;
-
-async function connectToDatabase() {
-  if (cachedConnection && mongoose.connection.readyState === 1) {
-    return cachedConnection;
-  }
-
-  try {
-    console.log(`Attempting to connect to MongoDB...`);
-    
-    const connection = await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-      maxPoolSize: 10 // Maintain up to 10 socket connections
-    });
-
-    console.log('✅ Connected to MongoDB successfully');
-    cachedConnection = connection;
-    return connection;
-  } catch (error) {
-    console.error('Database connection error:', error);
-    throw error;
-  }
-}
 
 // For local development, start the server
 if (process.env.NODE_ENV !== 'production') {
