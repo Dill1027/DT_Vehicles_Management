@@ -92,8 +92,8 @@ const Dashboard = () => {
       console.log('- License Alerts Total:', licenseAlerts.length);
       console.log('- License Expired Count:', expiredLicense.length);
       console.log('- License Expiring Count:', expiringLicense.length);
-      console.log('- Sample Expired Insurance:', expiredInsurance.slice(0, 2));
-      console.log('- Sample Expired License:', expiredLicense.slice(0, 2));
+      // console.log('- Sample Expired Insurance:', expiredInsurance.slice(0, 2));
+      // console.log('- Sample Expired License:', expiredLicense.slice(0, 2));
       
       setStats({
         total: statsData.total || 0,
