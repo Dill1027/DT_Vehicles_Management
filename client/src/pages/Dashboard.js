@@ -68,11 +68,29 @@ const Dashboard = () => {
       const insuranceAlerts = insuranceAlertsResponse.data || [];
       const licenseAlerts = licenseAlertsResponse.data || [];
       
+      // Debug logging to help troubleshoot
+      console.log('Dashboard data debug:', {
+        vehiclesCount: vehiclesArray.length,
+        insuranceAlertsCount: insuranceAlerts.length,
+        licenseAlertsCount: licenseAlerts.length,
+        sampleVehicle: vehiclesArray[0],
+        sampleInsuranceAlert: insuranceAlerts[0],
+        sampleLicenseAlert: licenseAlerts[0]
+      });
+      
       const expiredInsurance = insuranceAlerts.filter(alert => alert.isExpired);
       const expiringInsurance = insuranceAlerts.filter(alert => !alert.isExpired);
       
       const expiredLicense = licenseAlerts.filter(alert => alert.isExpired);
       const expiringLicense = licenseAlerts.filter(alert => !alert.isExpired);
+      
+      // Additional debug logging for expired items
+      console.log('Expired items debug:', {
+        expiredInsuranceCount: expiredInsurance.length,
+        expiredLicenseCount: expiredLicense.length,
+        expiredInsuranceItems: expiredInsurance,
+        expiredLicenseItems: expiredLicense
+      });
       
       setStats({
         total: statsData.total || 0,

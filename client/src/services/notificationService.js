@@ -60,13 +60,21 @@ const notificationService = {
           }
         });
         
+        console.log('Insurance alerts processed:', {
+          totalVehicles: vehicles.length,
+          vehiclesWithInsurance: vehicles.filter(v => v.insuranceExpiry).length,
+          alertsGenerated: insuranceAlerts.length,
+          expiredCount: insuranceAlerts.filter(a => a.isExpired).length,
+          sampleExpired: insuranceAlerts.filter(a => a.isExpired).slice(0, 2)
+        });
+        
         // Sort by urgency (expired first, then by days remaining)
         insuranceAlerts.sort((a, b) => {
           if (a.isExpired && !b.isExpired) return -1;
           if (!a.isExpired && b.isExpired) return 1;
           return a.daysUntilExpiry - b.daysUntilExpiry;
         });
-        
+
         return { success: true, data: insuranceAlerts };
       }
     } catch (error) {
@@ -130,6 +138,14 @@ const notificationService = {
               });
             }
           }
+        });
+        
+        console.log('License alerts processed:', {
+          totalVehicles: vehicles.length,
+          vehiclesWithLicense: vehicles.filter(v => v.licenseExpiry).length,
+          alertsGenerated: licenseAlerts.length,
+          expiredCount: licenseAlerts.filter(a => a.isExpired).length,
+          sampleExpired: licenseAlerts.filter(a => a.isExpired).slice(0, 2)
         });
         
         // Sort by urgency (expired first, then by days remaining)
