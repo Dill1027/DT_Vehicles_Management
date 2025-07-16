@@ -4,19 +4,21 @@ import { QueryClient } from 'react-query';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Cache data for 5 minutes to reduce API calls
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      cacheTime: 10 * 60 * 1000, // 10 minutes
+      // Increase cache time to reduce API calls
+      staleTime: 3 * 60 * 1000, // 3 minutes before considering data stale
+      cacheTime: 15 * 60 * 1000, // 15 minutes before garbage collection
       // Retry failed requests with exponential backoff
       retry: (failureCount, error) => {
         if (error?.response?.status === 404) return false;
-        return failureCount < 3;
+        return failureCount < 2; // Reduced from 3 to 2
       },
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-      // Refetch on window focus but not too aggressively
+      // Disable aggressive refetching to improve performance
       refetchOnWindowFocus: false,
-      refetchOnMount: true,
+      refetchOnMount: false, // Changed from true to false
       refetchOnReconnect: true,
+      // Add network throttling
+      networkMode: 'online',
     },
     mutations: {
       // Automatically retry mutations once

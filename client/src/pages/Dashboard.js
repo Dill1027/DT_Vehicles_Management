@@ -32,23 +32,61 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Cache dashboard data and set up intelligent refresh
+    const cacheKey = 'dashboard_data_cache';
+    const cacheTime = 2 * 60 * 1000; // 2 minutes cache
+    
+    const cachedData = localStorage.getItem(cacheKey);
+    const cacheTimestamp = localStorage.getItem(`${cacheKey}_timestamp`);
+    
+    if (cachedData && cacheTimestamp && 
+        (Date.now() - parseInt(cacheTimestamp) < cacheTime)) {
+      // Use cached data if available and fresh
+      try {
+        const parsed = JSON.parse(cachedData);
+        setVehicles(parsed.vehicles || []);
+        setStats(parsed.stats || {});
+        setInsuranceAlerts(parsed.insuranceAlerts || []);
+        setLicenseAlerts(parsed.licenseAlerts || []);
+        setLoading(false);
+        
+        // Still fetch fresh data in background but don't show loading
+        fetchDashboardData(false);
+        return;
+      } catch (e) {
+        console.warn('Cache parse error:', e);
+      }
+    }
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       
-      // Fetch all data in parallel
+      // Fetch all data in parallel with timeout
+      const fetchPromises = [
+        vehicleService.getAllVehicles({ limit: 10 }),
+        vehicleService.getVehicleStats(),
+        notificationService.getInsuranceExpiryAlerts(30),
+        notificationService.getLicenseExpiryAlerts(30)
+      ];
+      
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 15000)
+      );
+      
       const [
         vehiclesResponse,
         statsResponse,
         insuranceAlertsResponse,
         licenseAlertsResponse
-      ] = await Promise.all([
-        vehicleService.getAllVehicles({ limit: 10 }),
-        vehicleService.getVehicleStats(),
-        notificationService.getInsuranceExpiryAlerts(30),
-        notificationService.getLicenseExpiryAlerts(30)
+      ] = await Promise.race([
+        Promise.all(fetchPromises),
+        timeoutPromise
       ]);
 
       // Fix for vehicles.slice is not a function error
@@ -108,6 +146,30 @@ const Dashboard = () => {
       
       setInsuranceAlerts(insuranceAlerts);
       setLicenseAlerts(licenseAlerts);
+
+      // Cache the dashboard data to improve subsequent loads
+      const cacheData = {
+        vehicles: vehiclesArray,
+        stats: {
+          total: statsData.total || 0,
+          available: statsData.available || 0,
+          inUse: statsData.inUse || 0,
+          maintenance: statsData.maintenance || 0,
+          insuranceExpiring: expiringInsurance.length,
+          insuranceExpired: expiredInsurance.length,
+          licenseExpiring: expiringLicense.length,
+          licenseExpired: expiredLicense.length
+        },
+        insuranceAlerts,
+        licenseAlerts
+      };
+      
+      try {
+        localStorage.setItem('dashboard_data_cache', JSON.stringify(cacheData));
+        localStorage.setItem('dashboard_data_cache_timestamp', Date.now().toString());
+      } catch (e) {
+        console.warn('Failed to cache dashboard data:', e);
+      }
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);

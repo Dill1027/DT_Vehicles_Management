@@ -1,7 +1,7 @@
 const Vehicle = require('../models/Vehicle');
 const { validationResult } = require('express-validator');
 
-// Get all vehicles with filtering and pagination - optimized
+// Get all vehicles with filtering and pagination - optimized with caching
 const getAllVehicles = async (req, res) => {
   try {
     const {
@@ -15,6 +15,17 @@ const getAllVehicles = async (req, res) => {
       assignedDriver,
       search
     } = req.query;
+
+    // Add simple in-memory cache for frequent queries
+    const cacheKey = JSON.stringify(req.query);
+    const cacheTimeout = 60000; // 1 minute cache
+    
+    // Check if we have cached results (you can implement Redis here later)
+    if (getAllVehicles.cache && getAllVehicles.cache[cacheKey] && 
+        Date.now() - getAllVehicles.cache[cacheKey].timestamp < cacheTimeout) {
+      console.log('🚀 Returning cached vehicles data');
+      return res.json(getAllVehicles.cache[cacheKey].data);
+    }
 
     // Convert to numbers and validate
     const pageNum = Math.max(1, parseInt(page));
@@ -59,7 +70,7 @@ const getAllVehicles = async (req, res) => {
 
     const vehicles = await Vehicle.paginate(filter, options);
 
-    res.json({
+    const responseData = {
       success: true,
       data: vehicles.docs,
       pagination: {
@@ -68,7 +79,26 @@ const getAllVehicles = async (req, res) => {
         total: vehicles.totalDocs,
         limit: vehicles.limit
       }
-    });
+    };
+
+    // Cache the results to improve performance
+    if (!getAllVehicles.cache) getAllVehicles.cache = {};
+    getAllVehicles.cache[cacheKey] = {
+      data: responseData,
+      timestamp: Date.now()
+    };
+
+    // Clean old cache entries (keep last 10)
+    const cacheKeys = Object.keys(getAllVehicles.cache);
+    if (cacheKeys.length > 10) {
+      const oldestKey = cacheKeys.reduce((oldest, key) => 
+        getAllVehicles.cache[key].timestamp < getAllVehicles.cache[oldest].timestamp ? key : oldest
+      );
+      delete getAllVehicles.cache[oldestKey];
+    }
+
+    console.log(`📊 Retrieved ${vehicles.docs.length} vehicles from database`);
+    res.json(responseData);
   } catch (error) {
     console.error('Get all vehicles error:', error);
     res.status(500).json({
