@@ -84,13 +84,16 @@ const Dashboard = () => {
       const expiredLicense = licenseAlerts.filter(alert => alert.isExpired);
       const expiringLicense = licenseAlerts.filter(alert => !alert.isExpired);
       
-      // Additional debug logging for expired items
-      console.log('Expired items debug:', {
-        expiredInsuranceCount: expiredInsurance.length,
-        expiredLicenseCount: expiredLicense.length,
-        expiredInsuranceItems: expiredInsurance,
-        expiredLicenseItems: expiredLicense
-      });
+      // Enhanced debug logging for expired items
+      console.log('🔧 Dashboard Debug: Detailed Expired Items Analysis:');
+      console.log('- Insurance Alerts Total:', insuranceAlerts.length);
+      console.log('- Insurance Expired Count:', expiredInsurance.length);
+      console.log('- Insurance Expiring Count:', expiringInsurance.length);
+      console.log('- License Alerts Total:', licenseAlerts.length);
+      console.log('- License Expired Count:', expiredLicense.length);
+      console.log('- License Expiring Count:', expiringLicense.length);
+      console.log('- Sample Expired Insurance:', expiredInsurance.slice(0, 2));
+      console.log('- Sample Expired License:', expiredLicense.slice(0, 2));
       
       setStats({
         total: statsData.total || 0,

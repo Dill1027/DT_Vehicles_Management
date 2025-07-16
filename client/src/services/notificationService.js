@@ -35,8 +35,17 @@ const notificationService = {
         
         vehicles.forEach(vehicle => {
           if (vehicle.insuranceExpiry) {
+            // Parse the ISO date string correctly
             const expiryDate = new Date(vehicle.insuranceExpiry);
-            const daysUntilExpiry = Math.ceil((expiryDate - currentDate) / (1000 * 60 * 60 * 24));
+            const today = new Date();
+            
+            // Set both dates to start of day for accurate comparison
+            const expiryDateOnly = new Date(expiryDate.getFullYear(), expiryDate.getMonth(), expiryDate.getDate());
+            const currentDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            
+            const daysUntilExpiry = Math.ceil((expiryDateOnly - currentDateOnly) / (1000 * 60 * 60 * 24));
+            
+            console.log(`🔧 Insurance Debug: Vehicle ${vehicle.vehicleNumber} - Expiry: ${vehicle.insuranceExpiry}, ExpiryDateOnly: ${expiryDateOnly.toISOString().split('T')[0]}, CurrentDateOnly: ${currentDateOnly.toISOString().split('T')[0]}, Days: ${daysUntilExpiry}, IsExpired: ${daysUntilExpiry <= 0}`);
             
             // Include vehicles with insurance expiring within the specified days or already expired
             if (daysUntilExpiry <= days) {
@@ -110,13 +119,21 @@ const notificationService = {
           vehicles = [];
         }
         
-        const currentDate = new Date();
         const licenseAlerts = [];
         
         vehicles.forEach(vehicle => {
           if (vehicle.licenseExpiry) {
+            // Parse the ISO date string correctly
             const expiryDate = new Date(vehicle.licenseExpiry);
-            const daysUntilExpiry = Math.ceil((expiryDate - currentDate) / (1000 * 60 * 60 * 24));
+            const today = new Date();
+            
+            // Set both dates to start of day for accurate comparison
+            const expiryDateOnly = new Date(expiryDate.getFullYear(), expiryDate.getMonth(), expiryDate.getDate());
+            const currentDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            
+            const daysUntilExpiry = Math.ceil((expiryDateOnly - currentDateOnly) / (1000 * 60 * 60 * 24));
+            
+            console.log(`🔧 License Debug: Vehicle ${vehicle.vehicleNumber} - Expiry: ${vehicle.licenseExpiry}, ExpiryDateOnly: ${expiryDateOnly.toISOString().split('T')[0]}, CurrentDateOnly: ${currentDateOnly.toISOString().split('T')[0]}, Days: ${daysUntilExpiry}, IsExpired: ${daysUntilExpiry <= 0}`);
             
             // Include vehicles with license expiring within the specified days or already expired
             if (daysUntilExpiry <= days) {
