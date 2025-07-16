@@ -301,18 +301,34 @@ router.get('/insurance-expiry', async (req, res) => {
     const futureDate = new Date();
     futureDate.setDate(currentDate.getDate() + days);
 
+    // Find vehicles with insurance expiry within the specified range or already expired
     const vehicles = await Vehicle.find({
-      insuranceExpiry: {
-        $gte: currentDate,
-        $lte: futureDate
-      }
+      $or: [
+        // Insurance expiring soon
+        {
+          insuranceExpiry: {
+            $gte: currentDate,
+            $lte: futureDate
+          }
+        },
+        // Already expired insurance
+        {
+          insuranceExpiry: {
+            $lt: currentDate
+          }
+        }
+      ]
     }).select('vehicleNumber make model insuranceExpiry');
 
     // Calculate days until expiry for each vehicle
-    const alertsWithDays = vehicles.map(vehicle => ({
-      ...vehicle.toObject(),
-      daysUntilExpiry: Math.ceil((new Date(vehicle.insuranceExpiry) - currentDate) / (1000 * 60 * 60 * 24))
-    }));
+    const alertsWithDays = vehicles.map(vehicle => {
+      const daysUntilExpiry = Math.ceil((new Date(vehicle.insuranceExpiry) - currentDate) / (1000 * 60 * 60 * 24));
+      return {
+        ...vehicle.toObject(),
+        daysUntilExpiry,
+        isExpired: daysUntilExpiry <= 0
+      };
+    });
 
     res.json({
       success: true,
