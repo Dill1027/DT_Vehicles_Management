@@ -30,7 +30,6 @@ const notificationService = {
           vehicles = [];
         }
         
-        const currentDate = new Date();
         const insuranceAlerts = [];
         
         vehicles.forEach(vehicle => {
