@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
 
+// Version endpoint for deployment verification
+router.get('/version', (req, res) => {
+  res.json({
+    success: true,
+    version: '2.0.1',
+    timestamp: new Date().toISOString(),
+    features: ['expired-vehicle-fix', 'enhanced-debugging']
+  });
+});
+
 // Get all notifications
 router.get('/', async (req, res) => {
   try {
@@ -301,6 +311,8 @@ router.get('/insurance-expiry', async (req, res) => {
     const futureDate = new Date();
     futureDate.setDate(currentDate.getDate() + days);
 
+    console.log(`🔍 Insurance Expiry Query - Current: ${currentDate.toISOString()}, Future: ${futureDate.toISOString()}`);
+
     // Find vehicles with insurance expiry within the specified range or already expired
     const vehicles = await Vehicle.find({
       $or: [
@@ -320,13 +332,18 @@ router.get('/insurance-expiry', async (req, res) => {
       ]
     }).select('vehicleNumber make model insuranceExpiry');
 
+    console.log(`🔍 Found ${vehicles.length} vehicles with insurance alerts`);
+
     // Calculate days until expiry for each vehicle
     const alertsWithDays = vehicles.map(vehicle => {
       const daysUntilExpiry = Math.ceil((new Date(vehicle.insuranceExpiry) - currentDate) / (1000 * 60 * 60 * 24));
+      const isExpired = daysUntilExpiry <= 0;
+      console.log(`🔍 Vehicle ${vehicle.vehicleNumber}: ${daysUntilExpiry} days, expired: ${isExpired}`);
+      
       return {
         ...vehicle.toObject(),
         daysUntilExpiry,
-        isExpired: daysUntilExpiry <= 0
+        isExpired
       };
     });
 
@@ -353,6 +370,8 @@ router.get('/license-expiry', async (req, res) => {
     const futureDate = new Date();
     futureDate.setDate(currentDate.getDate() + days);
 
+    console.log(`🔍 License Expiry Query - Current: ${currentDate.toISOString()}, Future: ${futureDate.toISOString()}`);
+
     // Find vehicles with license expiry within the specified range or already expired
     const vehicles = await Vehicle.find({
       $or: [
@@ -372,17 +391,22 @@ router.get('/license-expiry', async (req, res) => {
       ]
     }).select('vehicleNumber make model licenseExpiry');
 
+    console.log(`🔍 Found ${vehicles.length} vehicles with license alerts`);
+
     // Process vehicles to calculate days until expiry or days overdue
     const licenseAlerts = vehicles.map(vehicle => {
       const vObj = vehicle.toObject();
       const expiryDate = new Date(vehicle.licenseExpiry);
       const daysUntilExpiry = Math.ceil((expiryDate - currentDate) / (1000 * 60 * 60 * 24));
+      const isExpired = daysUntilExpiry <= 0;
+      
+      console.log(`🔍 Vehicle ${vehicle.vehicleNumber}: ${daysUntilExpiry} days, expired: ${isExpired}`);
       
       return {
         ...vObj,
         licenseExpiryDate: vehicle.licenseExpiry,
         daysUntilExpiry,
-        isExpired: daysUntilExpiry <= 0,
+        isExpired,
         urgencyLevel: daysUntilExpiry <= 0 ? 'expired' : 
                       daysUntilExpiry <= 7 ? 'critical' : 
                       daysUntilExpiry <= 15 ? 'warning' : 'info'
