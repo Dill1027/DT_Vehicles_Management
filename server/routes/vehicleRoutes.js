@@ -332,8 +332,6 @@ router.put('/:id/with-images', uploadMultipleImages, handleMulterError, async (r
 
     // Determine how to handle images based on request
     let updatedImages = existingVehicle.images || [];
-    let updatedVehicleImages = existingVehicle.vehicleImages || [];
-    let primaryImageUrl = existingVehicle.imageUrl;
 
     if (req.body.replaceImages === 'true' || req.body.replaceImages === true) {
       // Replace all existing images with new ones

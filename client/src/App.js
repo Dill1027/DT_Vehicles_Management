@@ -5,9 +5,6 @@ import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
 import { queryClient } from './services/queryConfig';
-// Performance monitoring is auto-initialized on import
-// eslint-disable-next-line no-unused-vars
-import performanceMonitor from './utils/performanceMonitor';
 // Clear any existing localStorage data to start fresh
 import './utils/clearStorage';
 

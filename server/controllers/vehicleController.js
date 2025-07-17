@@ -21,7 +21,7 @@ const getAllVehicles = async (req, res) => {
     const cacheTimeout = 60000; // 1 minute cache
     
     // Check if we have cached results (you can implement Redis here later)
-    if (getAllVehicles.cache && getAllVehicles.cache[cacheKey] && 
+    if (getAllVehicles.cache?.[cacheKey] && 
         Date.now() - getAllVehicles.cache[cacheKey].timestamp < cacheTimeout) {
       console.log('🚀 Returning cached vehicles data');
       return res.json(getAllVehicles.cache[cacheKey].data);
@@ -30,7 +30,6 @@ const getAllVehicles = async (req, res) => {
     // Convert to numbers and validate
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Max 100 items per page
-    const skip = (pageNum - 1) * limitNum;
 
     // Build filter object with optimized queries
     const filter = {};
@@ -92,7 +91,8 @@ const getAllVehicles = async (req, res) => {
     const cacheKeys = Object.keys(getAllVehicles.cache);
     if (cacheKeys.length > 10) {
       const oldestKey = cacheKeys.reduce((oldest, key) => 
-        getAllVehicles.cache[key].timestamp < getAllVehicles.cache[oldest].timestamp ? key : oldest
+        getAllVehicles.cache[key].timestamp < getAllVehicles.cache[oldest].timestamp ? key : oldest, 
+        cacheKeys[0]
       );
       delete getAllVehicles.cache[oldestKey];
     }

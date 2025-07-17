@@ -128,7 +128,7 @@ router.get('/stats', async (req, res) => {
     ]);
 
     const typeStats = {};
-    if (stats[0] && stats[0].byType) {
+    if (stats[0]?.byType) {
       stats[0].byType.forEach(item => {
         if (!typeStats[item.type]) {
           typeStats[item.type] = { total: 0, unread: 0 };
@@ -402,14 +402,24 @@ router.get('/license-expiry', async (req, res) => {
       
       console.log(`🔍 Vehicle ${vehicle.vehicleNumber}: ${daysUntilExpiry} days, expired: ${isExpired}`);
       
+      // Determine urgency level based on days until expiry
+      let urgencyLevel;
+      if (daysUntilExpiry <= 0) {
+        urgencyLevel = 'expired';
+      } else if (daysUntilExpiry <= 7) {
+        urgencyLevel = 'critical';
+      } else if (daysUntilExpiry <= 15) {
+        urgencyLevel = 'warning';
+      } else {
+        urgencyLevel = 'info';
+      }
+
       return {
         ...vObj,
         licenseExpiryDate: vehicle.licenseExpiry,
         daysUntilExpiry,
         isExpired,
-        urgencyLevel: daysUntilExpiry <= 0 ? 'expired' : 
-                      daysUntilExpiry <= 7 ? 'critical' : 
-                      daysUntilExpiry <= 15 ? 'warning' : 'info'
+        urgencyLevel
       };
     });
 

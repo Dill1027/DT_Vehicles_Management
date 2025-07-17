@@ -130,8 +130,6 @@ const Dashboard = () => {
       console.log('- License Alerts Total:', licenseAlerts.length);
       console.log('- License Expired Count:', expiredLicense.length);
       console.log('- License Expiring Count:', expiringLicense.length);
-      // console.log('- Sample Expired Insurance:', expiredInsurance.slice(0, 2));
-      // console.log('- Sample Expired License:', expiredLicense.slice(0, 2));
       
       setStats({
         total: statsData.total || 0,
@@ -387,12 +385,9 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Expired Insurance Alert */}
           {insuranceAlerts.filter(alert => alert.isExpired).length > 0 && (
-            <div 
-              className="group bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl p-4 sm:p-6 cursor-pointer hover:shadow-xl hover:shadow-red-200/50 hover:bg-gradient-to-br hover:from-red-100 hover:to-red-200 transition-all duration-300 transform hover:scale-105 shadow-lg"
+            <button 
+              className="group bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl p-4 sm:p-6 cursor-pointer hover:shadow-xl hover:shadow-red-200/50 hover:bg-gradient-to-br hover:from-red-100 hover:to-red-200 transition-all duration-300 transform hover:scale-105 shadow-lg w-full text-left"
               onClick={() => handleFilterClick('insurance')}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && handleFilterClick('insurance')}
               aria-label="Filter by expired insurance"
             >
               <div className="flex items-center">
@@ -406,17 +401,14 @@ const Dashboard = () => {
                   <p className="text-sm sm:text-base text-red-700 group-hover:text-red-800 transition-colors font-medium">Immediate attention required</p>
                 </div>
               </div>
-            </div>
+            </button>
           )}
 
           {/* Expiring Soon Insurance Alert */}
           {insuranceAlerts.filter(alert => !alert.isExpired).length > 0 && (
-            <div 
-              className="group bg-gradient-to-br from-yellow-50 to-amber-100 border border-yellow-200 rounded-xl p-4 sm:p-6 cursor-pointer hover:shadow-xl hover:shadow-yellow-200/50 hover:bg-gradient-to-br hover:from-yellow-100 hover:to-amber-200 transition-all duration-300 transform hover:scale-105 shadow-lg"
+            <button 
+              className="group bg-gradient-to-br from-yellow-50 to-amber-100 border border-yellow-200 rounded-xl p-4 sm:p-6 cursor-pointer hover:shadow-xl hover:shadow-yellow-200/50 hover:bg-gradient-to-br hover:from-yellow-100 hover:to-amber-200 transition-all duration-300 transform hover:scale-105 shadow-lg w-full text-left"
               onClick={() => handleFilterClick('insurance')}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && handleFilterClick('insurance')}
               aria-label="Filter by insurance expiring soon"
             >
               <div className="flex items-center">
@@ -430,7 +422,7 @@ const Dashboard = () => {
                   <p className="text-sm sm:text-base text-yellow-700 group-hover:text-yellow-800 transition-colors font-medium">Click to view details</p>
                 </div>
               </div>
-            </div>
+            </button>
           )}
         </div>
       )}
@@ -440,12 +432,9 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Expired License Alert */}
           {licenseAlerts.filter(alert => alert.isExpired).length > 0 && (
-            <div 
-              className="group bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl p-4 sm:p-6 cursor-pointer hover:shadow-xl hover:shadow-red-200/50 hover:bg-gradient-to-br hover:from-red-100 hover:to-red-200 transition-all duration-300 transform hover:scale-105 shadow-lg"
+            <button 
+              className="group bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl p-4 sm:p-6 cursor-pointer hover:shadow-xl hover:shadow-red-200/50 hover:bg-gradient-to-br hover:from-red-100 hover:to-red-200 transition-all duration-300 transform hover:scale-105 shadow-lg w-full text-left"
               onClick={() => handleFilterClick('license')}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && handleFilterClick('license')}
               aria-label="Filter by expired license"
             >
               <div className="flex items-center">
@@ -459,17 +448,14 @@ const Dashboard = () => {
                   <p className="text-sm sm:text-base text-red-700 group-hover:text-red-800 transition-colors font-medium">Immediate attention required</p>
                 </div>
               </div>
-            </div>
+            </button>
           )}
 
           {/* Expiring Soon License Alert */}
           {licenseAlerts.filter(alert => !alert.isExpired).length > 0 && (
-            <div 
-              className="group bg-gradient-to-br from-yellow-50 to-amber-100 border border-yellow-200 rounded-xl p-4 sm:p-6 cursor-pointer hover:shadow-xl hover:shadow-yellow-200/50 hover:bg-gradient-to-br hover:from-yellow-100 hover:to-amber-200 transition-all duration-300 transform hover:scale-105 shadow-lg"
+            <button 
+              className="group bg-gradient-to-br from-yellow-50 to-amber-100 border border-yellow-200 rounded-xl p-4 sm:p-6 cursor-pointer hover:shadow-xl hover:shadow-yellow-200/50 hover:bg-gradient-to-br hover:from-yellow-100 hover:to-amber-200 transition-all duration-300 transform hover:scale-105 shadow-lg w-full text-left"
               onClick={() => handleFilterClick('license')}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && handleFilterClick('license')}
               aria-label="Filter by license expiring soon"
             >
               <div className="flex items-center">
@@ -483,7 +469,7 @@ const Dashboard = () => {
                   <p className="text-sm sm:text-base text-yellow-700 group-hover:text-yellow-800 transition-colors font-medium">Click to view details</p>
                 </div>
               </div>
-            </div>
+            </button>
           )}
 
           {/* Expiring Soon License Alert */}
