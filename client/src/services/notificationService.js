@@ -8,13 +8,36 @@ const notificationService = {
       // Try backend API first, fallback to vehicle service
       try {
         const response = await api.get(`/notifications/insurance-expiry?days=${days}`);
-        return { success: true, data: response.data.data || response.data };
+        let backendData = response.data.data || response.data;
+        
+        // Fix backend data if isExpired is missing or null
+        if (Array.isArray(backendData)) {
+          backendData = backendData.map(item => {
+            if (item.isExpired === null || item.isExpired === undefined) {
+              // Backend didn't calculate isExpired properly, calculate it here
+              const today = new Date();
+              const expiryDate = new Date(item.insuranceExpiry);
+              const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+              return {
+                ...item,
+                daysUntilExpiry: daysUntilExpiry,
+                isExpired: daysUntilExpiry <= 0
+              };
+            }
+            return item;
+          });
+          
+          console.log('✅ Fixed backend insurance data with client-side isExpired calculation');
+          return { success: true, data: backendData };
+        }
+        
+        return { success: true, data: backendData };
       } catch (apiError) {
         // Backend API not available, use vehicle service fallback
         console.log('Backend API not available, using vehicle service...', apiError.message);
         
-        // Fallback to vehicle service
-        const vehiclesResult = await vehicleService.getAllVehicles();
+        // Fallback to vehicle service - get ALL vehicles to ensure we catch expired ones
+        const vehiclesResult = await vehicleService.getAllVehicles({ limit: 1000 }); // Increase limit to catch all vehicles
         console.log('Vehicles result:', vehiclesResult);
         
         // Handle different response formats
@@ -97,13 +120,36 @@ const notificationService = {
       // Try backend API first, fallback to vehicle service
       try {
         const response = await api.get(`/notifications/license-expiry?days=${days}`);
-        return { success: true, data: response.data.data || response.data };
+        let backendData = response.data.data || response.data;
+        
+        // Fix backend data if isExpired is missing or null
+        if (Array.isArray(backendData)) {
+          backendData = backendData.map(item => {
+            if (item.isExpired === null || item.isExpired === undefined) {
+              // Backend didn't calculate isExpired properly, calculate it here
+              const today = new Date();
+              const expiryDate = new Date(item.licenseExpiry);
+              const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+              return {
+                ...item,
+                daysUntilExpiry: daysUntilExpiry,
+                isExpired: daysUntilExpiry <= 0
+              };
+            }
+            return item;
+          });
+          
+          console.log('✅ Fixed backend license data with client-side isExpired calculation');
+          return { success: true, data: backendData };
+        }
+        
+        return { success: true, data: backendData };
       } catch (apiError) {
         // Backend API not available, use vehicle service fallback
         console.log('Backend API not available, using vehicle service for license alerts...', apiError.message);
         
-        // Fallback to vehicle service
-        const vehiclesResult = await vehicleService.getAllVehicles();
+        // Fallback to vehicle service - get ALL vehicles to ensure we catch expired ones
+        const vehiclesResult = await vehicleService.getAllVehicles({ limit: 1000 }); // Increase limit to catch all vehicles
         
         // Handle different response formats
         let vehicles = [];
