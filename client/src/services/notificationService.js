@@ -5,71 +5,62 @@ const notificationService = {
   // Get vehicles with expiring insurance
   getInsuranceExpiryAlerts: async (days = 30) => {
     try {
-      // Try backend API first, fallback to vehicle service
+      // Always fetch from vehicles API to ensure we get all vehicles including expired ones
+      console.log('🔍 Fetching insurance alerts - checking both backend API and vehicles API...');
+      
+      let finalData = [];
+      
+      // Try backend API first
       try {
-        const response = await api.get(`/notifications/insurance-expiry?days=${days}`);
-        let backendData = response.data.data || response.data;
+        const backendResponse = await api.get(`/notifications/insurance-expiry?days=${days}`);
+        let backendData = backendResponse.data.data || backendResponse.data;
         
-        // Fix backend data if isExpired is missing or null
-        if (Array.isArray(backendData)) {
+        if (Array.isArray(backendData) && backendData.length > 0) {
+          // Fix any missing isExpired fields
           backendData = backendData.map(item => {
-            if (item.isExpired === null || item.isExpired === undefined) {
-              // Backend didn't calculate isExpired properly, calculate it here
-              const today = new Date();
-              const expiryDate = new Date(item.insuranceExpiry);
-              const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-              return {
-                ...item,
-                daysUntilExpiry: daysUntilExpiry,
-                isExpired: daysUntilExpiry <= 0
-              };
-            }
-            return item;
+            const today = new Date();
+            const expiryDate = new Date(item.insuranceExpiry);
+            const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+            return {
+              ...item,
+              daysUntilExpiry: daysUntilExpiry,
+              isExpired: daysUntilExpiry <= 0
+            };
           });
           
-          console.log('✅ Fixed backend insurance data with client-side isExpired calculation');
-          return { success: true, data: backendData };
+          console.log('✅ Backend API returned', backendData.length, 'insurance alerts');
+          finalData = [...backendData];
         }
-        
-        return { success: true, data: backendData };
       } catch (apiError) {
-        // Backend API not available, use vehicle service fallback
-        console.log('Backend API not available, using vehicle service...', apiError.message);
-        
-        // Fallback to vehicle service - get ALL vehicles to ensure we catch expired ones
-        const vehiclesResult = await vehicleService.getAllVehicles({ limit: 1000 }); // Increase limit to catch all vehicles
-        console.log('Vehicles result:', vehiclesResult);
-        
-        // Handle different response formats
+        console.log('⚠️ Backend API failed:', apiError.message);
+      }
+      
+      // ALWAYS also check vehicles API to ensure we don't miss expired vehicles
+      try {
+        const vehiclesResult = await vehicleService.getAllVehicles({ limit: 1000 });
         let vehicles = [];
-        if (vehiclesResult && vehiclesResult.data && Array.isArray(vehiclesResult.data)) {
+        
+        if (vehiclesResult?.data?.data) {
+          vehicles = vehiclesResult.data.data;
+        } else if (vehiclesResult?.data) {
           vehicles = vehiclesResult.data;
-        } else if (vehiclesResult && Array.isArray(vehiclesResult)) {
+        } else if (Array.isArray(vehiclesResult)) {
           vehicles = vehiclesResult;
-        } else if (vehiclesResult && vehiclesResult.success && Array.isArray(vehiclesResult.data)) {
-          vehicles = vehiclesResult.data;
-        } else {
-          console.warn('Unexpected vehicles result format:', vehiclesResult);
-          vehicles = [];
         }
         
-        const insuranceAlerts = [];
+        console.log('🔍 Processing', vehicles.length, 'vehicles for insurance expiry');
+        
+        const vehicleInsuranceAlerts = [];
+        const today = new Date();
+        const futureDate = new Date();
+        futureDate.setDate(today.getDate() + days);
         
         vehicles.forEach(vehicle => {
           if (vehicle.insuranceExpiry) {
-            // Parse the ISO date string correctly
             const expiryDate = new Date(vehicle.insuranceExpiry);
-            const today = new Date();
+            const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
             
-            // Set both dates to start of day for accurate comparison
-            const expiryDateOnly = new Date(expiryDate.getFullYear(), expiryDate.getMonth(), expiryDate.getDate());
-            const currentDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            
-            const daysUntilExpiry = Math.ceil((expiryDateOnly - currentDateOnly) / (1000 * 60 * 60 * 24));
-            
-            console.log(`🔧 Insurance Debug: Vehicle ${vehicle.vehicleNumber} - Expiry: ${vehicle.insuranceExpiry}, ExpiryDateOnly: ${expiryDateOnly.toISOString().split('T')[0]}, CurrentDateOnly: ${currentDateOnly.toISOString().split('T')[0]}, Days: ${daysUntilExpiry}, IsExpired: ${daysUntilExpiry <= 0}`);
-            
-            // Include vehicles with insurance expiring within the specified days or already expired
+            // Include vehicles that are expired OR expiring within the specified days
             if (daysUntilExpiry <= days) {
               let urgencyLevel = 'info';
               if (daysUntilExpiry <= 0) {
@@ -80,36 +71,47 @@ const notificationService = {
                 urgencyLevel = 'warning';
               }
               
-              insuranceAlerts.push({
+              vehicleInsuranceAlerts.push({
                 ...vehicle,
                 insuranceExpiryDate: vehicle.insuranceExpiry,
                 daysUntilExpiry,
                 isExpired: daysUntilExpiry <= 0,
                 urgencyLevel
               });
+              
+              console.log(`🚗 Vehicle ${vehicle.vehicleNumber}: Insurance ${daysUntilExpiry > 0 ? 'expires in ' + daysUntilExpiry + ' days' : 'expired ' + Math.abs(daysUntilExpiry) + ' days ago'}`);
             }
           }
         });
         
-        console.log('Insurance alerts processed:', {
-          totalVehicles: vehicles.length,
-          vehiclesWithInsurance: vehicles.filter(v => v.insuranceExpiry).length,
-          alertsGenerated: insuranceAlerts.length,
-          expiredCount: insuranceAlerts.filter(a => a.isExpired).length,
-          sampleExpired: insuranceAlerts.filter(a => a.isExpired).slice(0, 2)
+        // Merge with backend data, removing duplicates (prefer vehicles API data)
+        const vehicleNumbers = new Set(vehicleInsuranceAlerts.map(v => v.vehicleNumber));
+        const backendOnly = finalData.filter(item => !vehicleNumbers.has(item.vehicleNumber));
+        
+        finalData = [...vehicleInsuranceAlerts, ...backendOnly];
+        
+        console.log('📊 Final insurance alerts:', {
+          fromVehiclesAPI: vehicleInsuranceAlerts.length,
+          fromBackendOnly: backendOnly.length,
+          total: finalData.length,
+          expired: finalData.filter(a => a.isExpired).length,
+          expiring: finalData.filter(a => !a.isExpired).length
         });
         
-        // Sort by urgency (expired first, then by days remaining)
-        insuranceAlerts.sort((a, b) => {
-          if (a.isExpired && !b.isExpired) return -1;
-          if (!a.isExpired && b.isExpired) return 1;
-          return a.daysUntilExpiry - b.daysUntilExpiry;
-        });
-
-        return { success: true, data: insuranceAlerts };
+      } catch (vehicleError) {
+        console.error('❌ Vehicles API failed:', vehicleError.message);
       }
+      
+      // Sort by urgency (expired first, then by days remaining)
+      finalData.sort((a, b) => {
+        if (a.isExpired && !b.isExpired) return -1;
+        if (!a.isExpired && b.isExpired) return 1;
+        return a.daysUntilExpiry - b.daysUntilExpiry;
+      });
+
+      return { success: true, data: finalData };
     } catch (error) {
-      console.error('Error fetching insurance expiry alerts:', error);
+      console.error('❌ Error fetching insurance expiry alerts:', error);
       return { success: false, data: [] };
     }
   },
@@ -117,70 +119,62 @@ const notificationService = {
   // Get vehicles with expiring licenses
   getLicenseExpiryAlerts: async (days = 30) => {
     try {
-      // Try backend API first, fallback to vehicle service
+      // Always fetch from vehicles API to ensure we get all vehicles including expired ones
+      console.log('🔍 Fetching license alerts - checking both backend API and vehicles API...');
+      
+      let finalData = [];
+      
+      // Try backend API first
       try {
-        const response = await api.get(`/notifications/license-expiry?days=${days}`);
-        let backendData = response.data.data || response.data;
+        const backendResponse = await api.get(`/notifications/license-expiry?days=${days}`);
+        let backendData = backendResponse.data.data || backendResponse.data;
         
-        // Fix backend data if isExpired is missing or null
-        if (Array.isArray(backendData)) {
+        if (Array.isArray(backendData) && backendData.length > 0) {
+          // Fix any missing isExpired fields
           backendData = backendData.map(item => {
-            if (item.isExpired === null || item.isExpired === undefined) {
-              // Backend didn't calculate isExpired properly, calculate it here
-              const today = new Date();
-              const expiryDate = new Date(item.licenseExpiry);
-              const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-              return {
-                ...item,
-                daysUntilExpiry: daysUntilExpiry,
-                isExpired: daysUntilExpiry <= 0
-              };
-            }
-            return item;
+            const today = new Date();
+            const expiryDate = new Date(item.licenseExpiry);
+            const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+            return {
+              ...item,
+              daysUntilExpiry: daysUntilExpiry,
+              isExpired: daysUntilExpiry <= 0
+            };
           });
           
-          console.log('✅ Fixed backend license data with client-side isExpired calculation');
-          return { success: true, data: backendData };
+          console.log('✅ Backend API returned', backendData.length, 'license alerts');
+          finalData = [...backendData];
         }
-        
-        return { success: true, data: backendData };
       } catch (apiError) {
-        // Backend API not available, use vehicle service fallback
-        console.log('Backend API not available, using vehicle service for license alerts...', apiError.message);
-        
-        // Fallback to vehicle service - get ALL vehicles to ensure we catch expired ones
-        const vehiclesResult = await vehicleService.getAllVehicles({ limit: 1000 }); // Increase limit to catch all vehicles
-        
-        // Handle different response formats
+        console.log('⚠️ Backend API failed:', apiError.message);
+      }
+      
+      // ALWAYS also check vehicles API to ensure we don't miss expired vehicles
+      try {
+        const vehiclesResult = await vehicleService.getAllVehicles({ limit: 1000 });
         let vehicles = [];
-        if (vehiclesResult && vehiclesResult.data && Array.isArray(vehiclesResult.data)) {
+        
+        if (vehiclesResult?.data?.data) {
+          vehicles = vehiclesResult.data.data;
+        } else if (vehiclesResult?.data) {
           vehicles = vehiclesResult.data;
-        } else if (vehiclesResult && Array.isArray(vehiclesResult)) {
+        } else if (Array.isArray(vehiclesResult)) {
           vehicles = vehiclesResult;
-        } else if (vehiclesResult && vehiclesResult.success && Array.isArray(vehiclesResult.data)) {
-          vehicles = vehiclesResult.data;
-        } else {
-          console.warn('Unexpected vehicles result format:', vehiclesResult);
-          vehicles = [];
         }
         
-        const licenseAlerts = [];
+        console.log('🔍 Processing', vehicles.length, 'vehicles for license expiry');
+        
+        const vehicleLicenseAlerts = [];
+        const today = new Date();
+        const futureDate = new Date();
+        futureDate.setDate(today.getDate() + days);
         
         vehicles.forEach(vehicle => {
           if (vehicle.licenseExpiry) {
-            // Parse the ISO date string correctly
             const expiryDate = new Date(vehicle.licenseExpiry);
-            const today = new Date();
+            const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
             
-            // Set both dates to start of day for accurate comparison
-            const expiryDateOnly = new Date(expiryDate.getFullYear(), expiryDate.getMonth(), expiryDate.getDate());
-            const currentDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            
-            const daysUntilExpiry = Math.ceil((expiryDateOnly - currentDateOnly) / (1000 * 60 * 60 * 24));
-            
-            console.log(`🔧 License Debug: Vehicle ${vehicle.vehicleNumber} - Expiry: ${vehicle.licenseExpiry}, ExpiryDateOnly: ${expiryDateOnly.toISOString().split('T')[0]}, CurrentDateOnly: ${currentDateOnly.toISOString().split('T')[0]}, Days: ${daysUntilExpiry}, IsExpired: ${daysUntilExpiry <= 0}`);
-            
-            // Include vehicles with license expiring within the specified days or already expired
+            // Include vehicles that are expired OR expiring within the specified days
             if (daysUntilExpiry <= days) {
               let urgencyLevel = 'info';
               if (daysUntilExpiry <= 0) {
@@ -191,41 +185,50 @@ const notificationService = {
                 urgencyLevel = 'warning';
               }
               
-              licenseAlerts.push({
+              vehicleLicenseAlerts.push({
                 ...vehicle,
                 licenseExpiryDate: vehicle.licenseExpiry,
                 daysUntilExpiry,
                 isExpired: daysUntilExpiry <= 0,
                 urgencyLevel
               });
+              
+              console.log(`🚗 Vehicle ${vehicle.vehicleNumber}: License ${daysUntilExpiry > 0 ? 'expires in ' + daysUntilExpiry + ' days' : 'expired ' + Math.abs(daysUntilExpiry) + ' days ago'}`);
             }
           }
         });
         
-        console.log('License alerts processed:', {
-          totalVehicles: vehicles.length,
-          vehiclesWithLicense: vehicles.filter(v => v.licenseExpiry).length,
-          alertsGenerated: licenseAlerts.length,
-          expiredCount: licenseAlerts.filter(a => a.isExpired).length,
-          sampleExpired: licenseAlerts.filter(a => a.isExpired).slice(0, 2)
+        // Merge with backend data, removing duplicates (prefer vehicles API data)
+        const vehicleNumbers = new Set(vehicleLicenseAlerts.map(v => v.vehicleNumber));
+        const backendOnly = finalData.filter(item => !vehicleNumbers.has(item.vehicleNumber));
+        
+        finalData = [...vehicleLicenseAlerts, ...backendOnly];
+        
+        console.log('📊 Final license alerts:', {
+          fromVehiclesAPI: vehicleLicenseAlerts.length,
+          fromBackendOnly: backendOnly.length,
+          total: finalData.length,
+          expired: finalData.filter(a => a.isExpired).length,
+          expiring: finalData.filter(a => !a.isExpired).length
         });
         
-        // Sort by urgency (expired first, then by days remaining)
-        licenseAlerts.sort((a, b) => {
-          if (a.isExpired && !b.isExpired) return -1;
-          if (!a.isExpired && b.isExpired) return 1;
-          return a.daysUntilExpiry - b.daysUntilExpiry;
-        });
-        
-        return { success: true, data: licenseAlerts };
+      } catch (vehicleError) {
+        console.error('❌ Vehicles API failed:', vehicleError.message);
       }
+      
+      // Sort by urgency (expired first, then by days remaining)
+      finalData.sort((a, b) => {
+        if (a.isExpired && !b.isExpired) return -1;
+        if (!a.isExpired && b.isExpired) return 1;
+        return a.daysUntilExpiry - b.daysUntilExpiry;
+      });
+
+      return { success: true, data: finalData };
     } catch (error) {
-      console.error('Error fetching license expiry alerts:', error);
+      console.error('❌ Error fetching license expiry alerts:', error);
       return { success: false, data: [] };
     }
-  },
-
-  // Get expiring vehicles
+  },  // Get expiring vehicles
   getExpiringVehicles: async (days = 30) => {
     try {
       // Try backend API first
