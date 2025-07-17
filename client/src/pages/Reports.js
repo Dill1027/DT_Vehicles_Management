@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { vehicleService } from '../services/vehicleService';
+import notificationService from '../services/notificationService';
 import reportService from '../services/reportService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -21,8 +22,15 @@ const Reports = () => {
     totalVehicles: 0,
     activeVehicles: 0,
     maintenanceVehicles: 0,
-    expiredDocuments: 0,
-    expiringDocuments: 0
+    total: 0,
+    available: 0,
+    inUse: 0,
+    maintenance: 0,
+    insuranceExpiring: 0,
+    insuranceExpired: 0,
+    licenseExpiring: 0,
+    licenseExpired: 0,
+    expiringSoon: 0
   });
 
   useEffect(() => {
@@ -32,8 +40,55 @@ const Reports = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const response = await vehicleService.getVehicleStats();
-      setStats(response.data || {});
+      
+      // Fetch all data in parallel like Dashboard does
+      const [
+        statsResponse,
+        insuranceAlertsResponse,
+        licenseAlertsResponse
+      ] = await Promise.all([
+        vehicleService.getVehicleStats(),
+        notificationService.getInsuranceExpiryAlerts(30),
+        notificationService.getLicenseExpiryAlerts(30)
+      ]);
+      
+      const statsData = statsResponse.data || {};
+      const insuranceAlerts = insuranceAlertsResponse.data || [];
+      const licenseAlerts = licenseAlertsResponse.data || [];
+      
+      // Calculate expired and expiring counts like Dashboard
+      const expiredInsurance = insuranceAlerts.filter(alert => alert.isExpired);
+      const expiringInsurance = insuranceAlerts.filter(alert => !alert.isExpired);
+      
+      const expiredLicense = licenseAlerts.filter(alert => alert.isExpired);
+      const expiringLicense = licenseAlerts.filter(alert => !alert.isExpired);
+      
+      // Debug logging
+      console.log('📊 Reports Page Data:', {
+        statsData,
+        insuranceAlertsCount: insuranceAlerts.length,
+        licenseAlertsCount: licenseAlerts.length,
+        expiredInsurance: expiredInsurance.length,
+        expiringInsurance: expiringInsurance.length,
+        expiredLicense: expiredLicense.length,
+        expiringLicense: expiringLicense.length
+      });
+      
+      setStats({
+        total: statsData.total || 0,
+        available: statsData.available || 0,
+        inUse: statsData.inUse || 0,
+        maintenance: statsData.maintenance || 0,
+        insuranceExpiring: expiringInsurance.length,
+        insuranceExpired: expiredInsurance.length,
+        licenseExpiring: expiringLicense.length,
+        licenseExpired: expiredLicense.length,
+        expiringSoon: expiringInsurance.length + expiringLicense.length,
+        // Legacy compatibility
+        totalVehicles: statsData.total || 0,
+        activeVehicles: statsData.available || 0,
+        maintenanceVehicles: statsData.maintenance || 0
+      });
     } catch (error) {
       console.error('Error fetching stats:', error);
       toast.error('Failed to load statistics');
@@ -93,11 +148,13 @@ const Reports = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
-        <p className="text-gray-600 mt-2">Generate and download various reports for your vehicle fleet</p>
+        <p className="text-gray-600 mt-2">
+          Comprehensive vehicle fleet statistics including expired and expiring documents, plus downloadable reports
+        </p>
       </div>
 
       {/* Statistics Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
         <div
           className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
           onClick={() => navigate('/vehicles')}
@@ -158,6 +215,69 @@ const Reports = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Expiring Soon</p>
               <p className="text-2xl font-bold text-gray-900">{stats.expiringSoon || 0}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-red-100">
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Expired Docs</p>
+              <p className="text-2xl font-bold text-gray-900">{(stats.insuranceExpired || 0) + (stats.licenseExpired || 0)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Detailed Expiry Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-orange-100">
+              <ClockIcon className="h-6 w-6 text-orange-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Insurance Expiring Soon</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.insuranceExpiring || 0}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-red-100">
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Insurance Expired</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.insuranceExpired || 0}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-orange-100">
+              <ClockIcon className="h-6 w-6 text-orange-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">License Expiring Soon</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.licenseExpiring || 0}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-red-100">
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">License Expired</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.licenseExpired || 0}</p>
             </div>
           </div>
         </div>
