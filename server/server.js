@@ -9,6 +9,12 @@ const path = require('path');
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 
+// Version info for debugging
+const APP_VERSION = '2.1.0';
+const DEPLOYMENT_ID = Date.now();
+
+console.log(`🚀 Starting DT Vehicles Backend v${APP_VERSION} (${DEPLOYMENT_ID})`);
+
 // Database connection configuration
 const mongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL;
 
@@ -244,16 +250,20 @@ app.get('/api/health', async (req, res) => {
     res.status(200).json({
       status: 'OK',
       message: 'DT Vehicles Management API is running',
+      version: APP_VERSION,
+      deploymentId: DEPLOYMENT_ID,
       timestamp: new Date().toISOString(),
       cors: 'enabled',
       mongodb: dbStatus,
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || 'development',
+      features: ['expired-vehicle-fix', 'enhanced-debugging-v2']
     });
   } catch (error) {
     console.error('Health check error:', error);
     res.status(500).json({
       status: 'ERROR',
       message: 'Health check failed',
+      version: APP_VERSION,
       error: error.message,
       mongodb: 'connection_failed'
     });
