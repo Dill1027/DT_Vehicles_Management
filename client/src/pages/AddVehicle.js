@@ -213,18 +213,34 @@ const AddVehicle = () => {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Add New Vehicle</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 p-3 sm:p-4 md:p-6">
+      <div className="max-w-5xl mx-auto">
+        {/* Header - Mobile Enhanced */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 sm:p-6 md:p-8 shadow-lg border border-white/20 mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1 sm:mb-2">
+            Add New Vehicle
+          </h1>
+          <p className="text-gray-600 font-medium text-sm sm:text-base">
+            Fill in the details to register a new vehicle in the system
+          </p>
+        </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Vehicle Information</h2>
+      <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+        <div className="bg-white/90 backdrop-blur-sm p-4 sm:p-6 md:p-8 rounded-xl shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
+            <div className="p-2 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 mr-2 sm:mr-3 flex-shrink-0">
+              <svg className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            </div>
+            Vehicle Information
+          </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Vehicle Number */}
-            <div>
-              <label htmlFor="vehicleNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                Vehicle Number * <span className="text-xs text-gray-500">(max 8 characters)</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+            {/* Vehicle Number - Mobile Enhanced */}
+            <div className="group">
+              <label htmlFor="vehicleNumber" className="block text-sm font-bold text-gray-700 mb-2 sm:mb-3">
+                Vehicle Number * <span className="text-xs text-gray-500 font-normal">(max 8 characters)</span>
               </label>
               <input
                 type="text"
@@ -233,20 +249,20 @@ const AddVehicle = () => {
                 value={formData.vehicleNumber}
                 onChange={handleChange}
                 maxLength="8"
-                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.vehicleNumber ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-3 sm:px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-base sm:text-lg shadow-sm hover:shadow-md ${
+                  errors.vehicleNumber ? 'border-red-500 bg-red-50' : 'border-gray-300 group-hover:border-blue-300'
                 }`}
                 placeholder="ABC-1234"
               />
-              <div className="flex justify-between mt-1">
-                {errors.vehicleNumber && <p className="text-sm text-red-600">{errors.vehicleNumber}</p>}
-                <p className="text-xs text-gray-500 ml-auto">{formData.vehicleNumber.length}/8</p>
+              <div className="flex justify-between mt-1 sm:mt-2">
+                {errors.vehicleNumber && <p className="text-xs sm:text-sm text-red-600 font-medium">{errors.vehicleNumber}</p>}
+                <p className="text-xs text-gray-500 ml-auto font-medium">{formData.vehicleNumber.length}/8</p>
               </div>
             </div>
 
-            {/* Vehicle Type */}
-            <div>
-              <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
+            {/* Vehicle Type - Mobile Enhanced */}
+            <div className="group">
+              <label htmlFor="type" className="block text-sm font-bold text-gray-700 mb-2 sm:mb-3">
                 Type *
               </label>
               <select
@@ -254,8 +270,8 @@ const AddVehicle = () => {
                 name="type"
                 value={formData.type}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.type ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-3 sm:px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-base sm:text-lg shadow-sm hover:shadow-md ${
+                  errors.type ? 'border-red-500 bg-red-50' : 'border-gray-300 group-hover:border-blue-300'
                 }`}
               >
                 <option value="">Select vehicle type</option>
@@ -276,12 +292,12 @@ const AddVehicle = () => {
                 <option value="Electric bike/scooter">Electric bike/scooter</option>
                 <option value="Other">Other</option>
               </select>
-              {errors.type && <p className="mt-1 text-sm text-red-600">{errors.type}</p>}
+              {errors.type && <p className="mt-2 text-sm text-red-600 font-medium">{errors.type}</p>}
             </div>
 
             {/* Vehicle Make/Brand */}
-            <div>
-              <label htmlFor="make" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="group">
+              <label htmlFor="make" className="block text-sm font-bold text-gray-700 mb-3">
                 Make/Brand *
               </label>
               <select
@@ -289,8 +305,8 @@ const AddVehicle = () => {
                 name="make"
                 value={formData.make}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.make ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-lg shadow-sm hover:shadow-md ${
+                  errors.make ? 'border-red-500 bg-red-50' : 'border-gray-300 group-hover:border-blue-300'
                 }`}
               >
                 <option value="">Select vehicle make</option>
@@ -334,12 +350,12 @@ const AddVehicle = () => {
                 </optgroup>
                 <option value="Other">Other</option>
               </select>
-              {errors.make && <p className="mt-1 text-sm text-red-600">{errors.make}</p>}
+              {errors.make && <p className="mt-2 text-sm text-red-600 font-medium">{errors.make}</p>}
             </div>
 
             {/* Year */}
-            <div>
-              <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="group">
+              <label htmlFor="year" className="block text-sm font-bold text-gray-700 mb-3">
                 Year *
               </label>
               <input
@@ -350,17 +366,17 @@ const AddVehicle = () => {
                 onChange={handleChange}
                 min="1900"
                 max={new Date().getFullYear() + 1}
-                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.year ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-lg shadow-sm hover:shadow-md ${
+                  errors.year ? 'border-red-500 bg-red-50' : 'border-gray-300 group-hover:border-blue-300'
                 }`}
-                placeholder="Enter vehicle year"
+                placeholder="2024"
               />
-              {errors.year && <p className="mt-1 text-sm text-red-600">{errors.year}</p>}
+              {errors.year && <p className="mt-2 text-sm text-red-600 font-medium">{errors.year}</p>}
             </div>
 
             {/* Insurance Expiry */}
-            <div>
-              <label htmlFor="insuranceExpiry" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="group">
+              <label htmlFor="insuranceExpiry" className="block text-sm font-bold text-gray-700 mb-3">
                 Insurance Expiry *
               </label>
               <input
@@ -568,30 +584,43 @@ const AddVehicle = () => {
           </div>
         )}
 
-        <div className="flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={handleReset}
-            className="px-6 py-2 border border-yellow-300 text-yellow-700 rounded-md hover:bg-yellow-50 focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-          >
-            Reset
-          </button>
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Creating...' : 'Create Vehicle'}
-          </button>
+        <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300">
+          <div className="flex flex-col sm:flex-row gap-4 justify-end">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="group px-6 py-3 border border-yellow-300 rounded-xl text-yellow-700 font-semibold hover:bg-gradient-to-r hover:from-yellow-50 hover:to-yellow-100 hover:border-yellow-400 transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md"
+            >
+              <span className="group-hover:scale-110 transition-transform duration-300 inline-block">Reset</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="group px-6 py-3 border border-red-300 rounded-xl text-red-700 font-semibold hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:border-red-400 transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md"
+            >
+              <span className="group-hover:scale-110 transition-transform duration-300 inline-block">Cancel</span>
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="group px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {loading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating...
+                </span>
+              ) : (
+                <span className="group-hover:scale-110 transition-transform duration-300 inline-block">Create Vehicle</span>
+              )}
+            </button>
+          </div>
         </div>
       </form>
+      </div>
     </div>
   );
 };

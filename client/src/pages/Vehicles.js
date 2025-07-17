@@ -120,46 +120,50 @@ const Vehicles = () => {
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Vehicle Management</h1>
-          <p className="text-gray-600 mt-1">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 p-3 sm:p-4 md:p-6">
+      {/* Header - Mobile Enhanced */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 shadow-lg border border-white/20 w-full sm:w-auto">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Vehicle Management
+          </h1>
+          <p className="text-gray-600 mt-1 sm:mt-2 font-medium text-sm sm:text-base">
             {totalVehicles} vehicle{totalVehicles !== 1 ? 's' : ''} found
           </p>
         </div>
         <Link
           to="/vehicles/add"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2"
+          className="group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 sm:px-6 py-3 rounded-xl font-semibold flex items-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 w-full sm:w-auto justify-center"
         >
-          <PlusIcon className="h-5 w-5" />
-          Add New Vehicle
+          <PlusIcon className="h-5 w-5 sm:h-6 sm:w-6 group-hover:rotate-90 transition-transform duration-300" />
+          <span className="text-sm sm:text-base">Add New Vehicle</span>
         </Link>
       </div>
 
-      {/* Search and Filters */}
-      <div className="mb-6 bg-white p-4 rounded-lg shadow-sm border">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
+      {/* Search and Filters - Mobile Enhanced */}
+      <div className="mb-6 sm:mb-8 bg-white/90 backdrop-blur-sm p-4 sm:p-6 rounded-xl shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300">
+        <div className="flex flex-col gap-4 sm:gap-6">
+          <div className="w-full">
+            <div className="relative group">
+              <MagnifyingGlassIcon className="h-5 w-5 sm:h-6 sm:w-6 absolute left-3 sm:left-4 top-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-300" />
               <input
                 type="text"
                 placeholder="Search by vehicle number, make, model..."
                 value={searchTerm}
                 onChange={handleSearchChange}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-base sm:text-lg shadow-sm hover:shadow-md"
               />
             </div>
           </div>
-          <div className="flex gap-4">
-            <div className="flex items-center gap-2">
-              <FunnelIcon className="h-5 w-5 text-gray-400" />
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-2 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 shadow-sm flex-shrink-0">
+                <FunnelIcon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+              </div>
               <select
                 value={filterStatus}
                 onChange={handleStatusFilterChange}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-3 sm:px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md font-medium text-sm sm:text-base"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -170,11 +174,11 @@ const Vehicles = () => {
                 <option value="retired">Retired</option>
               </select>
             </div>
-            <div>
+            <div className="w-full sm:w-auto">
               <select
                 value={filterType}
                 onChange={handleTypeFilterChange}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md font-medium text-sm sm:text-base"
               >
                 <option value="all">All Types</option>
                 <option value="car">Car</option>
@@ -189,88 +193,106 @@ const Vehicles = () => {
         </div>
       </div>
 
-      {/* Vehicle Grid */}
+      {/* Vehicle Grid - Mobile Enhanced */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <LoadingSpinner size="lg" />
+        <div className="flex justify-center py-12 sm:py-16">
+          <div className="bg-white/90 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-lg">
+            <LoadingSpinner size="lg" />
+          </div>
         </div>
       ) : (
         <>
           {vehicles.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
                 {vehicles.map((vehicle, index) => (
-                  <VehicleCard
-                    key={vehicle.id || vehicle._id || index}
-                    vehicle={vehicle}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onView={handleView}
-                  />
+                  <div key={vehicle.id || vehicle._id || index} className="transform hover:scale-105 transition-all duration-300">
+                    <VehicleCard
+                      vehicle={vehicle}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onView={handleView}
+                    />
+                  </div>
                 ))}
               </div>
 
-              {/* Pagination */}
+              {/* Pagination - Mobile Enhanced */}
               {totalPages > 1 && (
-                <div className="mt-8 flex justify-center">
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
-                    
-                    {[...Array(totalPages)].map((_, index) => {
-                      const page = index + 1;
-                      return (
-                        <button
-                          key={page}
-                          onClick={() => handlePageChange(page)}
-                          className={`px-3 py-2 text-sm font-medium rounded-md ${
-                            currentPage === page
-                              ? 'bg-blue-600 text-white'
-                              : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      );
-                    })}
-                    
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
+                <div className="mt-8 sm:mt-12 flex justify-center px-2">
+                  <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-2">
+                    <div className="flex space-x-1 sm:space-x-2">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 shadow-sm"
+                      >
+                        <span className="hidden sm:inline">Previous</span>
+                        <span className="sm:hidden">Prev</span>
+                      </button>
+                      
+                      {[...Array(totalPages)].map((_, index) => {
+                        const page = index + 1;
+                        // Show fewer page numbers on mobile
+                        const showPage = window.innerWidth < 640 ? 
+                          (page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1) :
+                          true;
+                        
+                        if (!showPage) return null;
+                        
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-300 hover:scale-105 shadow-sm ${
+                              currentPage === page
+                                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
+                                : 'text-gray-600 bg-white border border-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-600'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+                      
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 shadow-sm"
+                      >
+                        <span className="hidden sm:inline">Next</span>
+                        <span className="sm:hidden">Next</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
             </>
           ) : (
-            <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
-                <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+            <div className="text-center py-12 sm:py-16">
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-8 sm:p-12 max-w-md mx-auto">
+                <div className="text-gray-400 mb-4 sm:mb-6">
+                  <div className="p-3 sm:p-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 w-16 h-16 sm:w-20 sm:h-20 mx-auto flex items-center justify-center">
+                    <svg className="h-8 w-8 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">No vehicles found</h3>
+                <p className="text-gray-600 mb-4 sm:mb-6 font-medium text-sm sm:text-base">
+                  {searchTerm || filterStatus !== 'all' || filterType !== 'all'
+                    ? 'Try adjusting your search or filter criteria.'
+                    : 'Get started by adding your first vehicle.'
+                  }
+                </p>
+                <Link
+                  to="/vehicles/add"
+                  className="group inline-flex items-center px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
+                >
+                  <PlusIcon className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
+                  Add Vehicle
+                </Link>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No vehicles found</h3>
-              <p className="text-gray-500 mb-4">
-                {searchTerm || filterStatus !== 'all' || filterType !== 'all'
-                  ? 'Try adjusting your search or filter criteria.'
-                  : 'Get started by adding your first vehicle.'
-                }
-              </p>
-              <Link
-                to="/vehicles/add"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add Vehicle
-              </Link>
             </div>
           )}
         </>
