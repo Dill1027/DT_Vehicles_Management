@@ -1,7 +1,7 @@
 import { vehicleService } from './vehicleService';
 import notificationService from './notificationService';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const reportService = {
   // Generate PDF report with professional formatting
@@ -47,7 +47,7 @@ const reportService = {
       
       // Data table if provided
       if (columns.length > 0 && rows.length > 0) {
-        doc.autoTable({
+        autoTable(doc, {
           head: [columns],
           body: rows,
           startY: yPosition,
