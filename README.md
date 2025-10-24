@@ -1,94 +1,100 @@
-# 🚗 DT Vehicles Management System
+# DT Vehicles Management# DT Vehicles Management
 
-<div align="center">
 
-**A comprehensive vehicle fleet management system built with React.js frontend and Node.js backend, designed specifically for Deep Tec Engineering's vehicle fleet operations.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/Dill1027/DT_Vehicles_Management)
-[![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-green.svg)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/react-18.2.0-blue.svg)](https://reactjs.org/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/Dill1027/DT_Vehicles_Management)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+A vehicle management system with React frontend and Node.js backend.A vehicle management system with React frontend and Node.js backend.
 
-[🚀 Live Demo](https://dt-vehicles-management.vercel.app) • [📖 Documentation](docs/) • [🐛 Report Bug](https://github.com/Dill1027/DT_Vehicles_Management/issues) • [✨ Request Feature](https://github.com/Dill1027/DT_Vehicles_Management/issues)
 
-</div>
 
----
+## Screenshots## Screenshots
 
-## 📸 Screenshots
 
-<div align="center">
 
-### 🏠 Dashboard Overview
-![DT Vehicles Management System](2.png)
-*Real-time vehicle statistics, alerts, and comprehensive fleet overview*
+![Dashboard](2.png)![Dashboard](2.png)
 
-### 🚙 Vehicle Management
-![Vehicle Management Interface](3.png)
-*Add, edit, and track vehicle information with intuitive interface*
+![Vehicle Management](3.png)![Vehicle Management](3.png)
 
-</div>
-
-## 📋 Table of Contents
-
-- [🎯 Overview](#-overview)
-- [✨ Features](#-features)
-- [🛠️ Technology Stack](#️-technology-stack)
-- [📁 Project Structure](#-project-structure)
-- [📋 Prerequisites](#-prerequisites)
-- [🚀 Installation](#-installation)
-- [⚙️ Configuration](#️-configuration)
-- [🎮 Running the Application](#-running-the-application)
-- [🚀 Deployment](#-deployment)
-- [📚 API Documentation](#-api-documentation)
-- [🧪 Testing](#-testing)
-- [📊 Performance](#-performance)
-- [🤝 Contributing](#-contributing)
-- [🔧 Troubleshooting](#-troubleshooting)
-- [📄 License](#-license)
 - [🙏 Acknowledgments](#-acknowledgments)
+
+## Installation
 
 ## 🎯 Overview
 
-The DT Vehicles Management System is a modern web application designed to streamline vehicle fleet operations for Deep Tec Engineering. Built with cutting-edge technologies, it provides comprehensive tools for vehicle tracking, maintenance scheduling, insurance management, license renewal tracking, and operational reporting.
+1. Clone the repository
 
-### 🌟 Key Highlights
+```bashThe DT Vehicles Management System is a modern web application designed to streamline vehicle fleet operations for Deep Tec Engineering. Built with cutting-edge technologies, it provides comprehensive tools for vehicle tracking, maintenance scheduling, insurance management, license renewal tracking, and operational reporting.
+
+git clone https://github.com/Dill1027/DT_Vehicles_Management.git
+
+cd DT_Vehicles_Management### 🌟 Key Highlights
+
+```
 
 | Feature | Description | Status |
-|---------|-------------|--------|
-| 🚗 **Fleet Management** | Complete vehicle lifecycle management | ✅ Active |
-| 📊 **Real-time Dashboard** | Live statistics and alerts | ✅ Active |
-| 🔔 **Smart Notifications** | Automated expiry alerts | ✅ Active |
-| 📄 **PDF Reports** | Comprehensive reporting system | ✅ Active |
-| 📱 **Mobile Responsive** | Works on all device sizes | ✅ Active |
-| 🔐 **Secure & Scalable** | Built with security best practices | ✅ Active |
 
-### 🎯 Key Capabilities
+2. Install dependencies|---------|-------------|--------|
+
+```bash| 🚗 **Fleet Management** | Complete vehicle lifecycle management | ✅ Active |
+
+# Install backend dependencies| 📊 **Real-time Dashboard** | Live statistics and alerts | ✅ Active |
+
+cd server| 🔔 **Smart Notifications** | Automated expiry alerts | ✅ Active |
+
+npm install| 📄 **PDF Reports** | Comprehensive reporting system | ✅ Active |
+
+| 📱 **Mobile Responsive** | Works on all device sizes | ✅ Active |
+
+# Install frontend dependencies| 🔐 **Secure & Scalable** | Built with security best practices | ✅ Active |
+
+cd ../client
+
+npm install### 🎯 Key Capabilities
+
+```
 
 - **Fleet Dashboard**: Real-time overview of vehicle status and alerts
-- **Vehicle Management**: Complete CRUD operations for vehicle records  
-- **Alert System**: Automated notifications for insurance and license renewals
-- **Reporting**: Comprehensive reports with PDF export functionality
-- **Multi-platform**: Responsive design for desktop and mobile devices
 
-### 🏆 Why Choose DT Vehicles Management?
+3. Run the application- **Vehicle Management**: Complete CRUD operations for vehicle records  
 
-- ⚡ **Fast Performance** - Optimized React frontend with efficient state management
+```bash- **Alert System**: Automated notifications for insurance and license renewals
+
+# Start backend (in server directory)- **Reporting**: Comprehensive reports with PDF export functionality
+
+npm start- **Multi-platform**: Responsive design for desktop and mobile devices
+
+
+
+# Start frontend (in client directory)### 🏆 Why Choose DT Vehicles Management?
+
+npm start
+
+```- ⚡ **Fast Performance** - Optimized React frontend with efficient state management
+
 - 🔒 **Secure** - JWT authentication and secure API endpoints
-- 📈 **Scalable** - MongoDB database with horizontal scaling capability
+
+## Access- 📈 **Scalable** - MongoDB database with horizontal scaling capability
+
 - 🎨 **Modern UI** - Clean, intuitive interface built with TailwindCSS
-- 🔧 **Maintainable** - Well-structured codebase with comprehensive documentation
+
+- Frontend: http://localhost:3000- 🔧 **Maintainable** - Well-structured codebase with comprehensive documentation
+
+- Backend: http://localhost:5002
 
 ## ✨ Features
 
-### 🚙 Vehicle Management
-- **Vehicle Registration**: Add new vehicles with detailed specifications
-- **Vehicle Profiles**: Comprehensive vehicle information including make, model, year, type
-- **Status Tracking**: Monitor vehicle availability, usage, and maintenance status
-- **Document Management**: Upload and manage vehicle documents and images
+## Features
 
+### 🚙 Vehicle Management
+
+- Add, edit, delete vehicles- **Vehicle Registration**: Add new vehicles with detailed specifications
+
+- Dashboard with vehicle statistics- **Vehicle Profiles**: Comprehensive vehicle information including make, model, year, type
+
+- Vehicle search and filtering- **Status Tracking**: Monitor vehicle availability, usage, and maintenance status
+
+- PDF report generation- **Document Management**: Upload and manage vehicle documents and images
+
+- Responsive design
 ### 📊 Dashboard & Analytics
 - **Real-time Statistics**: Live vehicle counts and status overview
 - **Alert Monitoring**: Insurance and license expiration alerts
