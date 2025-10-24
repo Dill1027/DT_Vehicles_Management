@@ -10,9 +10,9 @@ A vehicle management system with React frontend and Node.js backend.A vehicle ma
 
 
 
-![Dashboard](2.png)![Dashboard](2.png)
+![Dashboard](2.png)
 
-![Vehicle Management](3.png)![Vehicle Management](3.png)
+![Vehicle Management](3.png)
 
 - [🙏 Acknowledgments](#-acknowledgments)
 
