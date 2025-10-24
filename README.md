@@ -2,6 +2,14 @@
 
 A comprehensive vehicle fleet management system built with React.js frontend and Node.js backend, designed specifically for Deep Tec Engineering's vehicle fleet operations.
 
+## 📸 Screenshots
+
+![DT Vehicles Management System](2.png)
+*Dashboard Overview - Real-time vehicle statistics and alerts*
+
+![Vehicle Management Interface](3.png)
+*Vehicle Management - Add, edit, and track vehicle information*
+
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-green.svg)
 ![React](https://img.shields.io/badge/react-18.2.0-blue.svg)
