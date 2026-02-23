@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const compression = require('compression');
 require('dotenv').config();
 const path = require('path');
 
@@ -162,6 +163,18 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Enable gzip compression for all responses
+app.use(compression({
+  level: 6, // Good balance between compression and speed
+  threshold: 1024, // Only compress responses larger than 1KB
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
+
 // Body parsing middleware with enhanced limits for Vercel
 app.use(express.json({ 
   limit: '10mb', // Reduced for Vercel compatibility
@@ -225,6 +238,14 @@ app.use('/api', async (req, res, next) => {
     if (mongoose.connection.readyState !== 1) {
       await connectToDatabase();
     }
+    
+    // Add caching headers for GET requests
+    if (req.method === 'GET') {
+      // Cache for 60 seconds, allow stale for 5 minutes
+      res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+      res.set('ETag', `W/"${Date.now()}"`);
+    }
+    
     next();
   } catch (error) {
     console.error('Database connection failed:', error);

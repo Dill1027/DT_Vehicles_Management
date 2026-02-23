@@ -68,7 +68,7 @@ const Dashboard = () => {
       
       // Fetch all data in parallel with timeout
       const fetchPromises = [
-        vehicleService.getAllVehicles({ limit: 10 }),
+        vehicleService.getAllVehicles({ limit: 5 }), // Reduced from 10 to 5 for faster load
         vehicleService.getVehicleStats(),
         notificationService.getInsuranceExpiryAlerts(30),
         notificationService.getLicenseExpiryAlerts(30)
@@ -76,7 +76,7 @@ const Dashboard = () => {
       
       // Add timeout to prevent hanging requests
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 15000)
+        setTimeout(() => reject(new Error('Request timeout')), 10000) // Reduced from 15s to 10s
       );
       
       const [

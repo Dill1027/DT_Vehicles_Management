@@ -13,12 +13,16 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/server.js"
+      "dest": "/server.js",
+      "headers": {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300"
+      }
     }
   ],
   "functions": {
     "server.js": {
-      "maxDuration": 60
+      "maxDuration": 30,
+      "memory": 1024
     }
   },
   "env": {

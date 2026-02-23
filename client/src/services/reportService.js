@@ -1,13 +1,30 @@
 import { vehicleService } from './vehicleService';
 import notificationService from './notificationService';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+
+// Lazy load heavy PDF libraries only when needed
+let jsPDF = null;
+let autoTable = null;
+
+const loadPDFLibraries = async () => {
+  if (!jsPDF || !autoTable) {
+    const [pdfModule, tableModule] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable')
+    ]);
+    jsPDF = pdfModule.jsPDF;
+    autoTable = tableModule.default;
+  }
+  return { jsPDF, autoTable };
+};
 
 const reportService = {
   // Generate PDF report with professional formatting
-  generatePDF: (title, data, columns = [], rows = []) => {
+  generatePDF: async (title, data, columns = [], rows = []) => {
     try {
-      const doc = new jsPDF();
+      // Load PDF libraries on demand
+      const { jsPDF: PDF, autoTable: autoTableFunc } = await loadPDFLibraries();
+      
+      const doc = new PDF();
       const pageWidth = doc.internal.pageSize.width;
       const pageHeight = doc.internal.pageSize.height;
       
@@ -56,7 +73,7 @@ const reportService = {
       
       // Data table if provided
       if (columns.length > 0 && rows.length > 0) {
-        autoTable(doc, {
+        autoTableFunc(doc, {
           head: [columns],
           body: rows,
           startY: yPosition,
@@ -160,7 +177,7 @@ const reportService = {
         vehicle.updatedAt ? new Date(vehicle.updatedAt).toLocaleDateString() : 'N/A'
       ]);
       
-      reportService.generatePDF(
+      await reportService.generatePDF(
         'Vehicle Summary Report',
         { summary },
         columns,
@@ -232,7 +249,7 @@ const reportService = {
         alert.isExpired ? 'EXPIRED' : 'Expiring Soon'
       ]);
       
-      reportService.generatePDF(
+      await reportService.generatePDF(
         'Document Expiry Report',
         { summary },
         columns,
@@ -285,7 +302,7 @@ const reportService = {
         }
       };
       
-      reportService.generatePDF(
+      await reportService.generatePDF(
         'Custom Report',
         customData,
         ['Configuration', 'Value'],
