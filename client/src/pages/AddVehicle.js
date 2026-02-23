@@ -316,6 +316,7 @@ const AddVehicle = () => {
                   <option value="Ford">Ford</option>
                   <option value="BMW">BMW</option>
                   <option value="Mercedes-Benz">Mercedes-Benz</option>
+                  <option value="Range Rover">Range Rover</option>
                   <option value="Audi">Audi</option>
                   <option value="Volkswagen">Volkswagen</option>
                   <option value="Hyundai">Hyundai</option>
