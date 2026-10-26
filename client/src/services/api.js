@@ -6,7 +6,9 @@ const isDev = process.env.NODE_ENV === 'development';
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 // Set up API base URL - Connect to backend server
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://dt-vehicles-backend.vercel.app/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || (isLocalhost
+  ? 'http://localhost:5002/api'
+  : 'https://dt-vehicles-backend.vercel.app/api');
 
 // Debug logging
 console.log('🔗 API Configuration:', {
@@ -20,6 +22,7 @@ console.log('🔗 API Configuration:', {
 // Create axios instance with optimized configurations
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   timeout: 30000, // 30 second timeout for large uploads
   headers: {
     'Content-Type': 'application/json',
@@ -37,31 +40,6 @@ const api = axios.create({
 // Track if we've already shown the server offline message
 let hasShownOfflineMessage = false;
 let offlineMessageTimeout = null;
-
-// For development - ability to switch ports if one fails
-const tryAlternatePort = async (config) => {
-  if (!isDev) return null;
-  
-  // If original URL was using port 5001, try 5000 instead and vice versa
-  const currentPort = config.baseURL.includes('5001') ? '5001' : '5000';
-  const alternatePort = currentPort === '5001' ? '5000' : '5001';
-  
-  try {
-    const newUrl = config.baseURL.replace(currentPort, alternatePort);
-    const response = await axios({
-      ...config,
-      baseURL: newUrl
-    });
-    
-    // If successful, update the default baseURL for future requests
-    api.defaults.baseURL = newUrl;
-    console.log(`✅ Connected successfully using port ${alternatePort}`);
-    return response;
-  } catch (error) {
-    console.error(`Failed on alternate port ${alternatePort} as well:`, error.message);
-    return null;
-  }
-};
 
 // Request interceptor (no authentication required)
 api.interceptors.request.use(
@@ -89,6 +67,11 @@ api.interceptors.response.use(
       origin: window.location.origin
     });
 
+    if (response?.status === 401) {
+      if (!config?.url?.includes('/auth/login')) window.dispatchEvent(new Event('fleet-session-expired'));
+      return Promise.reject(error);
+    }
+
     // Handle CORS errors specifically
     if (error.message.includes('CORS') || error.message.includes('Access-Control')) {
       console.error('🚫 CORS Error - Backend may not be allowing this origin');
@@ -108,17 +91,11 @@ api.interceptors.response.use(
 
     // Handle server connection issues
     if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
-      if (isDev) {
-        // In development, try the alternate port
-        const alternateResponse = await tryAlternatePort(error.config);
-        if (alternateResponse) {
-          return alternateResponse;
-        }
-      }
-      
       // Show offline message (only once)
       if (!hasShownOfflineMessage) {
-        toast.error('Server appears to be offline. Please check your connection.');
+        toast.error(code === 'ECONNABORTED'
+          ? 'The server took too long to respond. Please try again.'
+          : 'Cannot reach the API server. Check the backend connection.');
         hasShownOfflineMessage = true;
         
         // Clear any existing timeout to prevent memory leaks
@@ -136,7 +113,9 @@ api.interceptors.response.use(
     
     // Server error
     if (error.response?.status >= 500) {
-      toast.error('Server error. Our team has been notified.');
+      toast.error(response.status === 503
+        ? 'Database temporarily unavailable. Please try again shortly.'
+        : 'The server could not complete the request. Please try again.');
     }
     
     return Promise.reject(error instanceof Error ? error : new Error(error.message || 'Unknown error'));

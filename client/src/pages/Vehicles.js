@@ -1,313 +1,210 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { PlusIcon, MagnifyingGlassIcon, FunnelIcon, XMarkIcon, Squares2X2Icon, ListBulletIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import { vehicleService } from '../services/vehicleService';
 import VehicleCard from '../components/VehicleCard';
-import VehicleModal from '../components/VehicleModal';
+import { compareVehicleExpiry, earliestVehicleExpiry } from '../utils/vehicleExpiry';
+import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { PlusIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
+import { ErrorState, Expiry, PageHeader, Status, VehicleActions, useDialogFocus, formatDate, expiryDays, vehicleArray, vehicleId } from '../components/FleetUI';
 
-const Vehicles = () => {
+export default function Vehicles({ archived = false }) {
+  const { canEdit, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterType, setFilterType] = useState('all');
-  const [showModal, setShowModal] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalVehicles, setTotalVehicles] = useState(0);
-
-  const navigate = useNavigate();
-
-  const vehiclesPerPage = 12;
-
-  useEffect(() => {
-    fetchVehicles();
-  }, [currentPage, searchTerm, filterStatus, filterType]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const fetchVehicles = async () => {
+  const [error, setError] = useState(false);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState(params.get('status') || 'all');
+  const [type, setType] = useState('all');
+  const [view, setView] = useState('grid');
+  const [expiry, setExpiry] = useState('all');
+  const [density, setDensity] = useState('comfortable');
+  const expiryOptions = [['all', 'All'], ['expired', 'Expired'], ['7', 'Next 7 days'], ['30', 'Next 30 days']];
+  const matchesExpiry = (v, key) => {
+    if (key === 'all') return true;
+    const date = earliestVehicleExpiry(v);
+    const days = Number.isFinite(date) ? expiryDays(date) : null;
+    return days !== null && (key === 'expired' ? days < 0 : days >= 0 && days <= Number(key));
+  };
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const drawerRef = useRef(null);
+  useDialogFocus(filtersOpen, drawerRef, () => setFiltersOpen(false));
+  const load = async () => {
+    setLoading(true);
+    setError(false);
     try {
-      setLoading(true);
-      const params = {
-        page: currentPage,
-        limit: vehiclesPerPage,
-        search: searchTerm,
-        status: filterStatus !== 'all' ? filterStatus : undefined,
-        type: filterType !== 'all' ? filterType : undefined
-      };
-
-      const response = await vehicleService.getAllVehicles(params);
-      
-      // Handle both structured and simple response formats
-      if (response.data && response.data.vehicles) {
-        // Structured response with pagination
-        setVehicles(response.data.vehicles);
-        setTotalPages(response.data.totalPages || 1);
-        setTotalVehicles(response.data.totalVehicles || 0);
-      } else {
-        // Simple array response (fallback)
-        const vehicleArray = response.data || [];
-        setVehicles(vehicleArray);
-        setTotalPages(Math.ceil(vehicleArray.length / vehiclesPerPage));
-        setTotalVehicles(vehicleArray.length);
-      }
-    } catch (error) {
-      console.error('Error fetching vehicles:', error);
-      toast.error('Failed to fetch vehicles');
-      // Set empty state on error
-      setVehicles([]);
-      setTotalPages(1);
-      setTotalVehicles(0);
+      setVehicles(vehicleArray(await vehicleService.getAllVehicles(archived ? { archived: true } : {})));
+    }
+    catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
   };
-
-  const handleDelete = async (vehicleId) => {
-    if (window.confirm('Are you sure you want to delete this vehicle?')) {
-      try {
-        await vehicleService.deleteVehicle(vehicleId);
-        toast.success('Vehicle deleted successfully');
-        fetchVehicles();
-      } catch (error) {
-        console.error('Error deleting vehicle:', error);
-        toast.error('Failed to delete vehicle');
-      }
+  useEffect(() => {
+    load();
+  }, [archived]); // eslint-disable-line react-hooks/exhaustive-deps
+  const matching = useMemo(() => vehicles.filter(v => {
+    const query = search.trim().toLowerCase();
+    const normalizedStatus = (v.status || '').toLowerCase();
+    const matchesStatus = status === 'all' || (status === 'available' ? ['active', 'available'].includes(normalizedStatus) : status === 'in-use' ? ['in service', 'in-use', 'in use'].includes(normalizedStatus) : status === 'maintenance' ? /maintenance/i.test(normalizedStatus) : v.status === status);
+    return matchesStatus && (type === 'all' || v.type === type) && [v.vehicleNumber, v.make, v.model, v.department].some(value => String(value || '').toLowerCase().includes(query));
+  }).sort(compareVehicleExpiry), [vehicles, search, status, type]);
+  const filtered = matching.filter(v => matchesExpiry(v, expiry));
+  useEffect(() => {
+    setPage(1);
+  }, [search, status, type, expiry, density]);
+  const pageSize = density === 'compact' ? 24 : 12;
+  const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const current = Math.min(page, pages);
+  const visible = filtered.slice((current - 1) * pageSize, current * pageSize);
+  const onView = v => navigate(`/vehicles/${vehicleId(v)}`);
+  const onEdit = v => navigate(`/vehicles/${vehicleId(v)}/edit`);
+  const onDelete = async id => {
+    if (!window.confirm('Archive this vehicle? You can restore it from the Archive page.')) return;
+    try {
+      await vehicleService.archiveVehicle(id);
+      setVehicles(previous => previous.filter(v => vehicleId(v) !== id));
+      toast.success('Vehicle archived');
+    }
+    catch {
+      toast.error('Unable to archive vehicle');
     }
   };
-
-  const handleEdit = (vehicle) => {
-    navigate(`/vehicles/${vehicle._id || vehicle.id}/edit`);
+  const onRestore = async vehicle => {
+    if (!window.confirm(`Restore ${vehicle.vehicleNumber} to the active fleet?`)) return;
+    try { await vehicleService.restoreVehicle(vehicleId(vehicle)); setVehicles(previous => previous.filter(v => vehicleId(v) !== vehicleId(vehicle))); toast.success('Vehicle restored'); }
+    catch { toast.error('Unable to restore vehicle'); }
   };
-
-  const handleView = (vehicle) => {
-    navigate(`/vehicles/${vehicle._id}`);
+  const reset = () => {
+    setExpiry('all');
+    setSearch('');
+    setStatus('all');
+    setType('all');
   };
-
-  const handleModalClose = () => {
-    setShowModal(false);
-    setSelectedVehicle(null);
-    fetchVehicles();
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const handleStatusFilterChange = (e) => {
-    setFilterStatus(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const handleTypeFilterChange = (e) => {
-    setFilterType(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  if (loading && vehicles.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <LoadingSpinner size="lg" />
+  const filters = <><label className="fleet-filter-label">Status<select className="input" value={status} onChange={e => setStatus(e.target.value)}>
+    <option value="all">All statuses</option>
+    <option value="available">Available / Active</option>
+    <option value="in-use">In Use / In Service</option>
+    <option value="maintenance">Under Maintenance</option>
+    {['Inactive', 'Out of Service', 'Retired'].map(s => <option key={s}>
+      {s}
+    </option>)}
+  </select></label><label className="fleet-filter-label">Vehicle type<select className="input" value={type} onChange={e => setType(e.target.value)}>
+    <option value="all">All types</option>
+    {[...new Set(vehicles.map(v => v.type).filter(Boolean))].sort().map(t => <option key={t}>
+      {t}
+    </option>)}
+  </select></label><button className="btn btn-outline" onClick={reset}>Clear filters</button></>;
+  return <div className="fleet-page">
+    <PageHeader title={archived ? "Archived Vehicles" : "Vehicles"} description={archived ? "Restore vehicles while preserving their history and documents." : "Manage your fleet, documents and availability."}>
+      {canEdit && !archived && <Link to="/vehicles/add" className="btn btn-primary"><PlusIcon className="h-4 w-4 mr-2" />Add Vehicle</Link>}
+    </PageHeader>
+    <section className="fleet-panel fleet-toolbar" aria-label="Search and filter vehicles">
+      <label className="fleet-search">
+        <MagnifyingGlassIcon className="h-5 w-5" />
+        <span className="sr-only">Search vehicles</span>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search vehicle number, model or department…" />
+      </label>
+      <button className="btn btn-outline md:hidden" onClick={() => setFiltersOpen(true)}><FunnelIcon className="h-4 w-4 mr-2" />Filters{status !== 'all' || type !== 'all' ? ' •' : ''}</button>
+      <div className="hidden md:flex items-end gap-3">
+        {filters}
       </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 p-3 sm:p-4 md:p-6">
-      {/* Header - Mobile Enhanced */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 shadow-lg border border-white/20 w-full sm:w-auto">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Vehicle Management
-          </h1>
-          <p className="text-gray-600 mt-1 sm:mt-2 font-medium text-sm sm:text-base">
-            {totalVehicles} vehicle{totalVehicles !== 1 ? 's' : ''} found
-          </p>
-        </div>
-        <Link
-          to="/vehicles/add"
-          className="group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 sm:px-6 py-3 rounded-xl font-semibold flex items-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 w-full sm:w-auto justify-center"
-        >
-          <PlusIcon className="h-5 w-5 sm:h-6 sm:w-6 group-hover:rotate-90 transition-transform duration-300" />
-          <span className="text-sm sm:text-base">Add New Vehicle</span>
-        </Link>
-      </div>
-
-      {/* Search and Filters - Mobile Enhanced */}
-      <div className="mb-6 sm:mb-8 bg-white/90 backdrop-blur-sm p-4 sm:p-6 rounded-xl shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300">
-        <div className="flex flex-col gap-4 sm:gap-6">
-          <div className="w-full">
-            <div className="relative group">
-              <MagnifyingGlassIcon className="h-5 w-5 sm:h-6 sm:w-6 absolute left-3 sm:left-4 top-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-300" />
-              <input
-                type="text"
-                placeholder="Search by vehicle number, make, model..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-base sm:text-lg shadow-sm hover:shadow-md"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-2 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 shadow-sm flex-shrink-0">
-                <FunnelIcon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-              </div>
-              <select
-                value={filterStatus}
-                onChange={handleStatusFilterChange}
-                className="flex-1 px-3 sm:px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md font-medium text-sm sm:text-base"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="available">Available</option>
-                <option value="in-use">In Use</option>
-                <option value="in maintenance">In Maintenance</option>
-                <option value="inactive">Inactive</option>
-                <option value="retired">Retired</option>
-              </select>
-            </div>
-            <div className="w-full sm:w-auto">
-              <select
-                value={filterType}
-                onChange={handleTypeFilterChange}
-                className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md font-medium text-sm sm:text-base"
-              >
-                <option value="all">All Types</option>
-                <option value="car">Car</option>
-                <option value="truck">Truck</option>
-                <option value="van">Van</option>
-                <option value="motorcycle">Motorcycle</option>
-                <option value="bus">Bus</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Vehicle Grid - Mobile Enhanced */}
-      {loading ? (
-        <div className="flex justify-center py-12 sm:py-16">
-          <div className="bg-white/90 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-lg">
-            <LoadingSpinner size="lg" />
-          </div>
-        </div>
-      ) : (
-        <>
-          {vehicles.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-                {vehicles.map((vehicle, index) => (
-                  <div key={vehicle.id || vehicle._id || index} className="transform hover:scale-105 transition-all duration-300">
-                    <VehicleCard
-                      vehicle={vehicle}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      onView={handleView}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {/* Pagination - Mobile Enhanced */}
-              {totalPages > 1 && (
-                <div className="mt-8 sm:mt-12 flex justify-center px-2">
-                  <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-2">
-                    <div className="flex space-x-1 sm:space-x-2">
-                      <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 shadow-sm"
-                      >
-                        <span className="hidden sm:inline">Previous</span>
-                        <span className="sm:hidden">Prev</span>
-                      </button>
-                      
-                      {[...Array(totalPages)].map((_, index) => {
-                        const page = index + 1;
-                        // Show fewer page numbers on mobile
-                        const showPage = window.innerWidth < 640 ? 
-                          (page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1) :
-                          true;
-                        
-                        if (!showPage) return null;
-                        
-                        return (
-                          <button
-                            key={page}
-                            onClick={() => handlePageChange(page)}
-                            className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-300 hover:scale-105 shadow-sm ${
-                              currentPage === page
-                                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
-                                : 'text-gray-600 bg-white border border-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-600'
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        );
-                      })}
-                      
-                      <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 shadow-sm"
-                      >
-                        <span className="hidden sm:inline">Next</span>
-                        <span className="sm:hidden">Next</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-12 sm:py-16">
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-8 sm:p-12 max-w-md mx-auto">
-                <div className="text-gray-400 mb-4 sm:mb-6">
-                  <div className="p-3 sm:p-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 w-16 h-16 sm:w-20 sm:h-20 mx-auto flex items-center justify-center">
-                    <svg className="h-8 w-8 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">No vehicles found</h3>
-                <p className="text-gray-600 mb-4 sm:mb-6 font-medium text-sm sm:text-base">
-                  {searchTerm || filterStatus !== 'all' || filterType !== 'all'
-                    ? 'Try adjusting your search or filter criteria.'
-                    : 'Get started by adding your first vehicle.'
-                  }
-                </p>
-                <Link
-                  to="/vehicles/add"
-                  className="group inline-flex items-center px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
-                >
-                  <PlusIcon className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
-                  Add Vehicle
-                </Link>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Modal */}
-      {showModal && (
-        <VehicleModal
-          vehicle={selectedVehicle}
-          onClose={handleModalClose}
-          onSave={handleModalClose}
-        />
-      )}
+    </section>
+    <div className="fleet-expiry-filters" aria-label="Filter by document expiry">
+      {expiryOptions.map(([key, label]) => <button key={key} className={expiry === key ? 'active' : ''} aria-pressed={expiry === key} onClick={() => setExpiry(key)}>{label}<span>{loading ? '…' : matching.filter(v => matchesExpiry(v, key)).length}</span></button>)}
     </div>
-  );
-};
-
-export default Vehicles;
+    {(search || status !== 'all' || type !== 'all' || expiry !== 'all') && <div className="fleet-filter-chips" aria-label="Active filters">
+      {[[search && `Search: ${search}`, () => setSearch('')], [status !== 'all' && `Status: ${status}`, () => setStatus('all')], [type !== 'all' && `Type: ${type}`, () => setType('all')], [expiry !== 'all' && expiryOptions.find(([key]) => key === expiry)?.[1], () => setExpiry('all')]].filter(([label]) => label).map(([label, clear]) => <button key={label} onClick={clear} aria-label={`Remove filter ${label}`}>{label}<XMarkIcon className="h-3 w-3" /></button>)}
+      <button onClick={reset}>Clear all</button>
+    </div>}
+    {canEdit && !archived && <Link to="/vehicles/add" className="btn btn-primary fleet-mobile-add"><PlusIcon className="h-5 w-5" />Add Vehicle</Link>}
+    {filtersOpen && <div className="fleet-drawer-backdrop" onClick={() => setFiltersOpen(false)}>
+      <section ref={drawerRef} role="dialog" aria-modal="true" aria-label="Vehicle filters" className="fleet-drawer" onClick={e => e.stopPropagation()} onKeyDown={e => {
+        if (e.key === 'Escape') setFiltersOpen(false);
+      }}>
+        <div className="flex justify-between items-center mb-6">
+          <h2>Filter vehicles</h2>
+          <button autoFocus className="fleet-icon-button" aria-label="Close filters" onClick={() => setFiltersOpen(false)}>
+            <XMarkIcon className="h-5 w-5" />
+          </button>
+        </div>
+        {filters}
+        <button className="btn btn-primary mt-6 w-full" onClick={() => setFiltersOpen(false)}>Show results</button>
+      </section>
+    </div>}
+    <div className="fleet-results-toolbar">
+      <p className="text-sm text-gray-500" aria-live="polite">
+        {loading ? 'Loading vehicles…' : `${filtered.length} vehicles found`}
+      </p>
+      <label className="fleet-density-control">Grid size<select className="input" value={density} onChange={e => setDensity(e.target.value)}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></label>
+      <div className="hidden md:flex fleet-view-toggle" aria-label="Vehicle layout">
+        {[['table', ListBulletIcon, 'Table'], ['grid', Squares2X2Icon, 'Grid']].map(([key, Icon, label]) => <button key={key} aria-pressed={view === key} onClick={() => setView(key)}>
+          <Icon className="h-4 w-4" />
+          {label}
+        </button>)}
+      </div>
+    </div>
+    {loading ? <div className="py-16">
+      <LoadingSpinner />
+    </div> : error ? <ErrorState retry={load} /> : !filtered.length ? <div className="fleet-panel fleet-empty">
+      <h2>No vehicles found</h2>
+      <p>
+        {vehicles.length ? 'Try another search or clear your filters.' : 'Add your first vehicle to start managing your fleet.'}
+      </p>
+      {vehicles.length ? <button className="btn btn-outline" onClick={reset}>Clear filters</button> : canEdit && !archived ? <Link className="btn btn-primary" to="/vehicles/add">Add Vehicle</Link> : null}
+    </div> : <>
+      <div className={view === 'grid' ? 'hidden' : 'hidden md:block fleet-panel'}>
+        <table className="fleet-table">
+          <thead>
+            <tr>
+              {['Vehicle', 'Department', 'Status', 'Insurance', 'License', ...(archived ? ['Archived'] : []), 'Actions'].map(h => <th key={h}>
+                {h}
+              </th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map(v => <tr key={vehicleId(v)}>
+              <td>
+                <Link className="fleet-vehicle-link" to={`/vehicles/${vehicleId(v)}`}>
+                  {v.vehicleNumber}
+                </Link>
+                <p className="text-xs text-gray-500 mt-1">{v.make} {v.model} · {v.type}</p>
+              </td>
+              <td>
+                {v.department || 'Unassigned'}
+              </td>
+              <td>
+                <Status value={v.status} />
+              </td>
+              <td>
+                <Expiry value={v.insuranceExpiry} />
+              </td>
+              <td>
+                <Expiry value={v.licenseExpiry} />
+              </td>
+              {archived && <td>{formatDate(v.archivedAt)}</td>}
+              <td>
+                <VehicleActions vehicle={v} onEdit={canEdit && !archived ? onEdit : undefined} onDelete={isAdmin && !archived ? onDelete : undefined} onRestore={isAdmin && archived ? onRestore : undefined} />
+              </td>
+            </tr>)}
+          </tbody>
+        </table>
+      </div>
+      <div className={`fleet-vehicle-grid fleet-grid-${density} ${view === 'table' ? 'md:hidden' : ''}`}>
+        {visible.map(v => <VehicleCard key={vehicleId(v)} vehicle={v} onView={onView} onEdit={canEdit && !archived ? onEdit : undefined} onDelete={isAdmin && !archived ? onDelete : undefined} onRestore={isAdmin && archived ? onRestore : undefined} />)}
+      </div>
+      <div className="fleet-pagination">
+        <p>Showing {(current - 1) * pageSize + 1}–{Math.min(current * pageSize, filtered.length)} of {filtered.length}</p>
+        <div>
+          <button className="btn btn-outline" disabled={current === 1} onClick={() => setPage(current - 1)}>Previous</button>
+          <span>Page {current} of {pages}</span>
+          <button className="btn btn-outline" disabled={current === pages} onClick={() => setPage(current + 1)}>Next</button>
+        </div>
+      </div></>}
+  </div>;
+}

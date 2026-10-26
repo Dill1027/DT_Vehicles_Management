@@ -4,7 +4,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env.local') });
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const path = require('path');
 
 const vehicleRoutes = require('./routes/vehicleRoutes');
@@ -25,36 +26,21 @@ if (!mongoUri) {
   process.exit(1);
 }
 
-// For Vercel, we need to connect to MongoDB on each request
-// This is a connection management for serverless environments
-let cachedConnection = null;
-
+const { configureMongoDns, createMongoConnector } = require('./utils/mongoConnection');
+configureMongoDns(process.env.MONGODB_DNS_SERVERS);
+const connectMongo = createMongoConnector(mongoose, mongoUri);
+const { bootstrapAdmin } = require('./utils/bootstrapAdmin');
+const { requireAuth, allowRoles, trustedMutationOrigin } = require('./middleware/auth');
+let adminInitialization;
 async function connectToDatabase() {
-  if (cachedConnection && mongoose.connection.readyState === 1) {
-    return cachedConnection;
-  }
-
-  try {
-    console.log(`Attempting to connect to MongoDB...`);
-    
-    const connection = await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-      maxPoolSize: 10 // Maintain up to 10 socket connections
-    });
-
-    console.log('✅ Connected to MongoDB successfully');
-    cachedConnection = connection;
-    return connection;
-  } catch (error) {
-    console.error('Database connection error:', error);
-    throw error;
-  }
+  const connection = await connectMongo();
+  if (!adminInitialization) adminInitialization = bootstrapAdmin().catch(error => { adminInitialization = null; throw error; });
+  await adminInitialization;
+  return connection;
 }
 
 const app = express();
+app.locals.connectToDatabase = connectToDatabase;
 const PORT = process.env.PORT || 5002; // Changed to 5002 to match client config
 
 // Security middleware
@@ -75,10 +61,8 @@ const corsOptions = {
       'http://127.0.0.1:3000',
       'https://dt-vehicles-frontend.vercel.app',
       'https://dt-vehicles-management.vercel.app',
-      // Allow any vercel app domain for this project
-      /^https:\/\/dt-vehicles.*\.vercel\.app$/,
-      /^https:\/\/.*--dt-vehicles.*\.vercel\.app$/
-    ];
+      process.env.FRONTEND_URL,
+    ].filter(Boolean);
     
     // Check if origin is explicitly allowed
     const isExplicitlyAllowed = allowedOrigins.some(allowedOrigin => {
@@ -92,16 +76,6 @@ const corsOptions = {
     if (isExplicitlyAllowed) {
       console.log(`✅ CORS allowed for origin: ${origin}`);
       return callback(null, true);
-    }
-    
-    // For development, also allow localhost patterns
-    if (process.env.NODE_ENV === 'development') {
-      const devPatterns = ['localhost', '127.0.0.1'];
-      const isDevAllowed = devPatterns.some(pattern => origin.includes(pattern));
-      if (isDevAllowed) {
-        console.log(`✅ CORS allowed for dev origin: ${origin}`);
-        return callback(null, true);
-      }
     }
     
     console.log(`🚫 CORS blocked origin: ${origin}`);
@@ -125,25 +99,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Enhanced preflight handling
-app.options('*', (req, res) => {
-  console.log(`✈️ Preflight request from ${req.headers.origin} for ${req.url}`);
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.status(200).end();
-});
-
-// Additional CORS headers for all responses
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  res.header('Access-Control-Allow-Credentials', 'true');
-  next();
-});
+app.options('*', cors(corsOptions));
 
 // Trust proxy for Vercel deployment
 app.set('trust proxy', 1);
@@ -188,9 +144,8 @@ app.use(express.urlencoded({
 }));
 
 // Serve static files from uploads directory with enhanced CORS headers
-app.use('/uploads', (req, res, next) => {
+app.use('/uploads', requireAuth, (req, res, next) => {
   // Add permissive CORS headers for images and static content
-  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -234,6 +189,8 @@ connectToDatabase().catch(console.error);
 
 // Simple middleware to ensure database is connected
 app.use('/api', async (req, res, next) => {
+  // The image reader connects on cache misses; cached photos need no database.
+  if (req.method === 'GET' && /^\/vehicles\/[a-f0-9]{24}\/image$/i.test(req.path)) return next();
   try {
     if (mongoose.connection.readyState !== 1) {
       await connectToDatabase();
@@ -242,24 +199,29 @@ app.use('/api', async (req, res, next) => {
     // Add caching headers for GET requests
     if (req.method === 'GET') {
       // Cache for 60 seconds, allow stale for 5 minutes
-      res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+      res.set('Cache-Control', 'no-store');
       res.set('ETag', `W/"${Date.now()}"`);
     }
     
     next();
   } catch (error) {
     console.error('Database connection failed:', error);
-    res.status(500).json({
+    res.set('Retry-After', '5');
+    res.status(503).json({
       success: false,
-      message: 'Database connection failed',
-      error: error.message
+      message: 'Database temporarily unavailable. Please try again shortly.'
     });
   }
 });
 
 // Routes
-app.use('/api/vehicles', vehicleRoutes);
-app.use('/api/notifications', notificationRoutes);
+app.use('/api', trustedMutationOrigin);
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/users', requireAuth, require('./routes/userRoutes'));
+app.use('/api/operations', requireAuth, require('./routes/operationRoutes'));
+app.use('/api/activity', requireAuth, require('./routes/activityRoutes'));
+app.use('/api/vehicles', requireAuth, vehicleRoutes);
+app.use('/api/notifications', requireAuth, (req, res, next) => ['GET', 'HEAD'].includes(req.method) ? next() : allowRoles('admin', 'editor')(req, res, next), notificationRoutes);
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
@@ -298,7 +260,6 @@ app.get('/api/test', (req, res) => {
     message: 'Test endpoint working',
     origin: req.headers.origin,
     timestamp: new Date().toISOString(),
-    headers: req.headers
   });
 });
 

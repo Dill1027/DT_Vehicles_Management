@@ -102,8 +102,7 @@ const deleteFile = (filePath) => {
 
 // Function to get absolute URL for a file
 const getFileUrl = (req, relativePath) => {
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
-  return `${baseUrl}/${relativePath.replace('./uploads/', 'uploads/')}`;
+  return `/uploads/users/${path.basename(relativePath)}`;
 };
 
 module.exports = {

@@ -1,12 +1,43 @@
 const express = require('express');
 const router = express.Router();
 const Vehicle = require('../models/Vehicle');
+const { Types } = require('mongoose');
+const { allowRoles } = require('../middleware/auth');
+const { createThumbnail } = require('../utils/thumbnail');
+const { auditedWrite, VEHICLE_FIELDS } = require('../utils/audit');
+const { withDeadline } = require('../utils/withDeadline');
+const { createCachedImageLoader } = require('../utils/cachedImageLoader');
 const { uploadMultipleImages, handleMulterError, getFileUrl } = require('../middleware/upload');
 
-// Get all vehicles (no authentication required)
+// Enforce permissions for every write route, including legacy upload/report routes.
+router.use((req, res, next) => {
+  if (['GET', 'HEAD'].includes(req.method)) return next();
+  const archiveAction = req.method === 'DELETE' || /\/(archive|restore)$/.test(req.path);
+  return allowRoles(...(archiveAction ? ['admin'] : ['admin', 'editor']))(req, res, next);
+});
+function sanitizeVehicleBody(req, res, next) {
+  if (req.body && ['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    const fields = ['vehicleNumber', 'make', 'model', 'modelMake', 'year', 'type', 'department', 'assignedTo', 'assignedDriver', 'insuranceDetails', 'insuranceExpiry', 'licenseExpiry', 'emissionExpiry', 'revenueExpiry', 'registrationExpiry', 'purchaseDate', 'purchasePrice', 'leaseDue', 'leaseProvider', 'mileage', 'monthStartMileage', 'monthEndMileage', 'monthlyMileage', 'fuelType', 'engineCapacity', 'serviceDate', 'nextServiceDue', 'lastMaintenanceDate', 'nextMaintenanceDate', 'tyreBatteryHistory', 'maintenanceNotes', 'status', 'condition', 'imageUrl', 'vehicleImages', 'images', 'documents', 'notes', 'replaceImages'];
+    req.body = Object.fromEntries(Object.entries(req.body).filter(([key]) => fields.includes(key)));
+  }
+  next();
+}
+router.use(sanitizeVehicleBody);
+
+// Get all vehicles
 router.get('/', async (req, res) => {
   try {
-    const vehicles = await Vehicle.find();
+    const archived = req.query.archived === 'true';
+    if (archived && req.user.role !== 'admin') return res.status(403).json({ message: 'Only administrators can access the archive.' });
+    // Do not transfer every full-resolution base64 photo with the fleet list.
+    const vehicles = await withDeadline(Vehicle.aggregate([
+      { $match: { archivedAt: archived ? { $ne: null } : null } },
+      { $addFields: { hasImage: { $or: [
+        { $gt: [{ $size: { $ifNull: ['$vehicleImages', []] } }, 0] },
+        { $ne: [{ $ifNull: ['$imageUrl', ''] }, ''] }
+      ] } } },
+      { $project: { vehicleImages: 0, imageUrl: 0, images: 0, documents: 0, notifications: 0, thumbnailData: 0, operationsVersion: 0 } }
+    ]).option({ maxTimeMS: 8000, includeArchived: archived }).exec(), 12000);
     console.log(`Retrieved ${vehicles.length} vehicles from database`);
     res.json({
       success: true,
@@ -14,11 +45,55 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching vehicles:', error);
-    res.status(500).json({
+    const unavailable = /Mongo.*(Network|ServerSelection|WaitQueue|OperationTimeout)|MongooseServerSelection/.test(error.name) || error.code === 50;
+    if (unavailable) res.set('Retry-After', '5');
+    res.status(unavailable ? 503 : 500).json({
       success: false,
-      message: 'Error fetching vehicles',
-      error: error.message
+      message: unavailable ? 'Database temporarily unavailable. Please try again shortly.' : 'Error fetching vehicles'
     });
+  }
+});
+
+// Decode each original only once per version; at most two database reads at a time.
+const createVehicleImageReader = connect => createCachedImageLoader(async key => {
+  await connect();
+  const id = key.split(':')[0];
+  const [vehicle] = await withDeadline(Vehicle.aggregate([
+    { $match: { _id: new Types.ObjectId(id) } },
+    { $project: { updatedAt: 1, thumbnailData: 1, source: { $ifNull: ['$thumbnailData', { $ifNull: [{ $arrayElemAt: ['$vehicleImages', 0] }, '$imageUrl'] }] } } }
+  ]).option({ maxTimeMS: 8000, readPreference: 'secondaryPreferred', includeArchived: key.endsWith(':admin') }).exec(), 30000);
+  let source = vehicle?.thumbnailData || vehicle?.source;
+  if (!source) return null;
+  if (!vehicle.thumbnailData) {
+    const thumbnail = await createThumbnail(source);
+    if (thumbnail) {
+      Vehicle.updateOne({ _id: new Types.ObjectId(id), updatedAt: vehicle.updatedAt }, { $set: { thumbnailData: thumbnail } }, { timestamps: false }).catch(error => console.warn('Thumbnail persistence delayed:', error.name));
+      source = thumbnail;
+    }
+  }
+  const data = /^data:(image\/(?:jpeg|jpg|png|gif|webp|avif|heic|heif|bmp|tiff));base64,([A-Za-z0-9+/=\r\n]+)$/.exec(source);
+  if (data) return { mime: data[1], body: Buffer.from(data[2], 'base64') };
+  if (/^https?:\/\//i.test(source) || source.startsWith('/uploads/')) return { redirect: source };
+  return null;
+});
+
+router.get('/:id/image', async (req, res) => {
+  res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  try {
+    if (!Types.ObjectId.isValid(req.params.id)) return res.status(400).end();
+    const version = String(req.query.v || '').slice(0, 100);
+    // Cache hits remain available even during a temporary Atlas outage.
+    req.app.locals.readVehicleImage ||= createVehicleImageReader(req.app.locals.connectToDatabase);
+    const image = await req.app.locals.readVehicleImage(`${req.params.id}:${version}:${req.user.role === 'admin' ? 'admin' : 'active'}`);
+    if (!image) return res.status(404).end();
+    if (image.redirect) return res.redirect(image.redirect);
+    res.set('Cache-Control', 'private, max-age=300');
+    return res.type(image.mime).send(image.body);
+  } catch (error) {
+    console.error('Vehicle photo unavailable:', error.name);
+    res.set('Cache-Control', 'no-store');
+    res.set('Retry-After', '5');
+    return res.status(503).end();
   }
 });
 
@@ -73,7 +148,7 @@ router.get('/stats', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching vehicle stats:', error);
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error fetching vehicle statistics'
     });
@@ -103,7 +178,7 @@ router.get('/expiring', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching expiring vehicles:', error);
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error fetching expiring vehicles'
     });
@@ -129,17 +204,17 @@ router.get('/expired', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching expired vehicles:', error);
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error fetching expired vehicles'
     });
   }
 });
 
-// Get vehicle by ID (no authentication required)
+// Get vehicle by ID
 router.get('/:id', async (req, res) => {
   try {
-    const vehicle = await Vehicle.findById(req.params.id);
+    const vehicle = await Vehicle.findById(req.params.id).setOptions({ includeArchived: req.user.role === 'admin' });
     if (!vehicle) {
       return res.status(404).json({
         success: false,
@@ -152,19 +227,25 @@ router.get('/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching vehicle:', error);
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error fetching vehicle'
     });
   }
 });
 
-// Create new vehicle (no authentication required)
+// Create new vehicle
 router.post('/', async (req, res) => {
   try {
-    console.log('Creating new vehicle with data:', JSON.stringify(req.body, null, 2));
+    req.body.createdBy = req.user._id;
+    req.body.updatedBy = req.user._id;
+    req.body.thumbnailData = await createThumbnail(req.body.vehicleImages?.[0] || req.body.imageUrl);
     const vehicle = new Vehicle(req.body);
-    const savedVehicle = await vehicle.save();
+    const savedVehicle = await auditedWrite(req.user, 'vehicle.created', 'vehicle', async session => {
+      const document = new Vehicle(vehicle.toObject());
+      await document.save({ session });
+      return { document };
+    });
     console.log('Vehicle saved successfully:', savedVehicle._id);
     res.status(201).json({
       success: true,
@@ -187,7 +268,7 @@ router.post('/', async (req, res) => {
         error: error.message
       });
     }
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error creating vehicle',
       error: error.message
@@ -196,7 +277,7 @@ router.post('/', async (req, res) => {
 });
 
 // Create new vehicle with multiple images support
-router.post('/with-images', uploadMultipleImages, handleMulterError, async (req, res) => {
+router.post('/with-images', uploadMultipleImages, handleMulterError, sanitizeVehicleBody, async (req, res) => {
   try {
     console.log('Creating new vehicle with images:', {
       body: req.body,
@@ -224,8 +305,15 @@ router.post('/with-images', uploadMultipleImages, handleMulterError, async (req,
       imageUrl: vehicleImages.length > 0 ? vehicleImages[0].url : undefined // Primary image
     };
 
+    vehicleData.createdBy = req.user._id;
+    vehicleData.updatedBy = req.user._id;
+    vehicleData.thumbnailData = await createThumbnail(vehicleData.vehicleImages?.[0] || vehicleData.imageUrl);
     const vehicle = new Vehicle(vehicleData);
-    const savedVehicle = await vehicle.save();
+    const savedVehicle = await auditedWrite(req.user, 'vehicle.created', 'vehicle', async session => {
+      const document = new Vehicle(vehicle.toObject());
+      await document.save({ session });
+      return { document };
+    });
     
     console.log('Vehicle with images saved successfully:', {
       id: savedVehicle._id,
@@ -256,7 +344,7 @@ router.post('/with-images', uploadMultipleImages, handleMulterError, async (req,
       });
     }
     
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error creating vehicle with images',
       error: error.message
@@ -264,14 +352,16 @@ router.post('/with-images', uploadMultipleImages, handleMulterError, async (req,
   }
 });
 
-// Update vehicle (no authentication required)
+// Update vehicle
 router.put('/:id', async (req, res) => {
   try {
-    const updated = await Vehicle.findByIdAndUpdate(
-      req.params.id, 
-      req.body, 
-      { new: true, runValidators: true }
-    );
+    req.body.updatedBy = req.user._id;
+    if ('vehicleImages' in req.body || 'imageUrl' in req.body) req.body.thumbnailData = await createThumbnail(req.body.vehicleImages?.[0] || req.body.imageUrl);
+    const updated = await auditedWrite(req.user, 'vehicle.updated', 'vehicle', async session => {
+      const before = await Vehicle.findById(req.params.id).select(VEHICLE_FIELDS.join(' ')).session(session).lean();
+      const document = await Vehicle.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true, session });
+      return { document, before };
+    });
     if (!updated) {
       return res.status(404).json({
         success: false,
@@ -292,7 +382,7 @@ router.put('/:id', async (req, res) => {
         errors: Object.values(error.errors).map(err => err.message)
       });
     }
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error updating vehicle'
     });
@@ -300,7 +390,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Update vehicle with multiple images support
-router.put('/:id/with-images', uploadMultipleImages, handleMulterError, async (req, res) => {
+router.put('/:id/with-images', uploadMultipleImages, handleMulterError, sanitizeVehicleBody, async (req, res) => {
   try {
     console.log('Updating vehicle with images:', {
       vehicleId: req.params.id,
@@ -354,14 +444,17 @@ router.put('/:id/with-images', uploadMultipleImages, handleMulterError, async (r
       imageUrl: primaryImageUrl
     };
 
+    updateData.updatedBy = req.user._id;
+    updateData.thumbnailData = await createThumbnail(updateData.vehicleImages?.[0] || updateData.imageUrl);
+
     // Remove the replaceImages flag from the data to save
     delete updateData.replaceImages;
 
-    const updated = await Vehicle.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    const updated = await auditedWrite(req.user, 'vehicle.updated', 'vehicle', async session => {
+      const before = await Vehicle.findById(req.params.id).select(VEHICLE_FIELDS.join(' ')).session(session).lean();
+      const document = await Vehicle.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true, session });
+      return { document, before };
+    });
 
     console.log('Vehicle with images updated successfully:', {
       id: updated._id,
@@ -392,7 +485,7 @@ router.put('/:id/with-images', uploadMultipleImages, handleMulterError, async (r
       });
     }
     
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error updating vehicle with images',
       error: error.message
@@ -400,27 +493,32 @@ router.put('/:id/with-images', uploadMultipleImages, handleMulterError, async (r
   }
 });
 
-// Delete vehicle (no authentication required)
-router.delete('/:id', async (req, res) => {
+// Preserve vehicle history; permanent deletion is not exposed.
+async function archiveVehicle(req, res) {
   try {
-    const deleted = await Vehicle.findByIdAndDelete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({
-        success: false,
-        message: 'Vehicle not found'
-      });
-    }
-    res.json({
-      success: true,
-      message: 'Vehicle deleted successfully'
+    const vehicle = await auditedWrite(req.user, 'vehicle.archived', 'vehicle', async session => {
+      const before = await Vehicle.findById(req.params.id).select(VEHICLE_FIELDS.join(' ')).session(session).lean();
+      const document = await Vehicle.findOneAndUpdate({ _id: req.params.id, archivedAt: null }, { $set: { archivedAt: new Date(), archivedBy: req.user._id, updatedBy: req.user._id } }, { new: true, session }).select(VEHICLE_FIELDS.join(' '));
+      return { document, before };
     });
-  } catch (error) {
-    console.error('Error deleting vehicle:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error deleting vehicle'
+    if (!vehicle) return res.status(404).json({ message: 'Active vehicle not found.' });
+    req.app.locals.readVehicleImage = undefined;
+    return res.json({ success: true, message: 'Vehicle archived.' });
+  } catch (error) { return res.status(error.status || 400).json({ message: error.status ? error.message : 'Unable to archive vehicle.' }); }
+}
+router.delete('/:id', archiveVehicle);
+router.patch('/:id/archive', archiveVehicle);
+router.patch('/:id/restore', async (req, res) => {
+  try {
+    const vehicle = await auditedWrite(req.user, 'vehicle.restored', 'vehicle', async session => {
+      const before = await Vehicle.findById(req.params.id).select(VEHICLE_FIELDS.join(' ')).setOptions({ includeArchived: true }).session(session).lean();
+      const document = await Vehicle.findOneAndUpdate({ _id: req.params.id, archivedAt: { $ne: null } }, { $set: { archivedAt: null, archivedBy: null, updatedBy: req.user._id } }, { new: true, includeArchived: true, session }).select(VEHICLE_FIELDS.join(' '));
+      return { document, before };
     });
-  }
+    if (!vehicle) return res.status(404).json({ message: 'Archived vehicle not found.' });
+    req.app.locals.readVehicleImage = undefined;
+    return res.json({ success: true, message: 'Vehicle restored.' });
+  } catch (error) { return res.status(error.status || 400).json({ message: error.status ? error.message : 'Unable to restore vehicle.' }); }
 });
 
 // Manual trigger for notification check (for testing)
@@ -438,7 +536,7 @@ router.post('/notifications/trigger', async (req, res) => {
     });
   } catch (error) {
     console.error('Error triggering notifications:', error);
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error triggering notifications'
     });
@@ -458,7 +556,7 @@ router.post('/reports/weekly', async (req, res) => {
     });
   } catch (error) {
     console.error('Error sending weekly report:', error);
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error sending weekly report'
     });
@@ -478,14 +576,14 @@ router.post('/reports/monthly', async (req, res) => {
     });
   } catch (error) {
     console.error('Error sending monthly report:', error);
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error sending monthly report'
     });
   }
 });
 
-// Generate PDF reports (no authentication required)
+// Generate PDF reports
 router.get('/reports/pdf/summary', async (req, res) => {
   try {
     const vehicles = await Vehicle.find({});
@@ -499,7 +597,7 @@ router.get('/reports/pdf/summary', async (req, res) => {
     res.send(pdfBuffer);
   } catch (error) {
     console.error('Error generating vehicle summary PDF:', error);
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error generating PDF report'
     });
@@ -520,7 +618,7 @@ router.get('/reports/pdf/expiry-alerts', async (req, res) => {
     res.send(pdfBuffer);
   } catch (error) {
     console.error('Error generating expiry alerts PDF:', error);
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error generating PDF report'
     });
@@ -540,7 +638,7 @@ router.get('/reports/pdf/maintenance', async (req, res) => {
     res.send(pdfBuffer);
   } catch (error) {
     console.error('Error generating maintenance PDF:', error);
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: 'Error generating PDF report'
     });

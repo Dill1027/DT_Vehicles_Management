@@ -1,11 +1,15 @@
 const mongoose = require('mongoose');
 
 // Enable debug mode for mongoose in development
-if (process.env.NODE_ENV === 'development') {
+if (process.env.MONGOOSE_DEBUG === 'true') {
   mongoose.set('debug', true);
 }
 
 const vehicleSchema = new mongoose.Schema({
+  operationsVersion: { type: Number, default: 0, select: false },
+  archivedAt: { type: Date, default: null, index: true },
+  archivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  thumbnailData: { type: String, select: false },
   // Primary vehicle identifiers
   vehicleNumber: { 
     type: String, 
@@ -283,6 +287,16 @@ const vehicleSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+// Legacy records without archivedAt are active too (MongoDB null matches missing).
+vehicleSchema.pre(/^(find|countDocuments)/, function() {
+  if (!this.getOptions().includeArchived) this.where({ archivedAt: null });
+  delete this.options.includeArchived;
+});
+vehicleSchema.pre('aggregate', function() {
+  if (!this.options.includeArchived) this.pipeline().unshift({ $match: { archivedAt: null } });
+  delete this.options.includeArchived;
 });
 
 // Create compound index for modelMake from make and model

@@ -3,7 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#ffffff" />
+    <script>
+      (function () {
+        var preference = 'system';
+        try { var stored = localStorage.getItem('dt_fleet_theme'); if (['light', 'dark', 'system'].indexOf(stored) !== -1) preference = stored; } catch (error) {}
+        var dark = preference === 'dark' || (preference === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        document.documentElement.classList.toggle('dark', !!dark);
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        document.querySelector('meta[name="theme-color"]').content = dark ? '#111c2f' : '#ffffff';
+      })();
+    </script>
     <meta
       name="description"
       content="DT Vehicles Management System - Comprehensive vehicle fleet management solution"
@@ -18,7 +29,6 @@
     <link rel="dns-prefetch" href="https://dt-vehicles-backend.vercel.app" />
 
     <!-- Performance hints -->
-    <link rel="preload" as="style" href="/static/css/main.css" />
 
     <title>DT Vehicles Management</title>
   </head>

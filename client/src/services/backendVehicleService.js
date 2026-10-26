@@ -1,14 +1,32 @@
 // Backend-connected vehicle service for MongoDB integration
 import api from './api';
 
+const mediaURL = value => typeof value === 'string' && value.startsWith('/uploads/')
+  ? new URL(value, new URL(api.defaults.baseURL, window.location.origin)).href : value;
+const normalizeVehicle = vehicle => ({
+  ...vehicle,
+  imageUrl: mediaURL(vehicle.imageUrl),
+  vehicleImages: (vehicle.vehicleImages || []).map(mediaURL),
+  documents: (vehicle.documents || []).map(document => ({ ...document, url: mediaURL(document.url) }))
+});
+
 export const vehicleService = {
   // Get all vehicles with optional filtering and pagination
   getAllVehicles: async (params = {}) => {
     try {
       const response = await api.get('/vehicles', { params });
+      const payload = response.data.data || response.data;
+      const withImage = vehicle => ({
+        ...vehicle,
+        imageUrl: vehicle.hasImage
+          ? `${api.defaults.baseURL.replace(/\/$/, '')}/vehicles/${vehicle._id || vehicle.id}/image?v=${encodeURIComponent(vehicle.updatedAt || '')}`
+          : vehicle.imageUrl
+      });
+      const data = Array.isArray(payload) ? payload.map(withImage)
+        : { ...payload, vehicles: (payload.vehicles || []).map(withImage) };
       return {
         success: true,
-        data: response.data.data || response.data,
+        data,
         total: response.data.total || response.data.length,
         page: response.data.page || 1,
         pages: response.data.pages || 1
@@ -25,7 +43,7 @@ export const vehicleService = {
       const response = await api.get(`/vehicles/${id}`);
       return {
         success: true,
-        data: response.data.data || response.data
+        data: normalizeVehicle(response.data.data || response.data)
       };
     } catch (error) {
       console.error('Error fetching vehicle:', error);
@@ -63,13 +81,16 @@ export const vehicleService = {
     }
   },
 
-  // Delete vehicle
+  archiveVehicle: async id => (await api.patch(`/vehicles/${id}/archive`)).data,
+  restoreVehicle: async id => (await api.patch(`/vehicles/${id}/restore`)).data,
+
+  // Legacy clients also archive; no permanent vehicle deletion.
   deleteVehicle: async (id) => {
     try {
       await api.delete(`/vehicles/${id}`);
       return {
         success: true,
-        message: 'Vehicle deleted successfully'
+        message: 'Vehicle archived successfully'
       };
     } catch (error) {
       console.error('Error deleting vehicle:', error);

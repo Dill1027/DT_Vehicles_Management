@@ -7,13 +7,10 @@ module.exports = function(app) {
     app.use(
       '/api',
       createProxyMiddleware({
-        target: 'http://localhost:5002',
+        target: 'http://127.0.0.1:5002/api',
         changeOrigin: true,
-        secure: false,
-        pathRewrite: {
-          '^/api': '' // Remove /api prefix when proxying to local server
-        },
-        logLevel: process.env.DEBUG_PROXY ? 'debug' : 'info'
+        proxyTimeout: 30000,
+        timeout: 30000
       })
     );
   }

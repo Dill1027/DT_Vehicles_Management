@@ -1,0 +1,21 @@
+import React from 'react';
+import '@testing-library/jest-dom';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import VehicleDetail from './VehicleDetail';
+jest.mock('../context/AuthContext', () => ({ useAuth: () => ({ canEdit: true, isAdmin: false }) }));
+jest.mock('../services/vehicleService', () => ({ vehicleService: { getVehicleById: async () => ({ data: { _id: 'v1', vehicleNumber: 'TEST-01' } }) } }));
+jest.mock('../components/VehicleOperations', () => ({ __esModule: true, default: ({ kind }) => <div>{kind} history</div> }));
+test('vehicle tabs select documents, service and fuel with keyboard navigation', async () => {
+  const { container } = render(<MemoryRouter initialEntries={['/vehicles/v1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><Routes><Route path="/vehicles/:id" element={<VehicleDetail />} /></Routes></MemoryRouter>);
+  await screen.findByRole('tab', { name: 'Overview' });
+  expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
+  fireEvent.click(screen.getByRole('tab', { name: 'Documents' }));
+  expect(screen.getByRole('tabpanel')).toHaveTextContent('Documents & Expiry Dates');
+  fireEvent.keyDown(screen.getByRole('tab', { name: 'Documents' }), { key: 'ArrowRight' });
+  expect(screen.getByRole('tab', { name: 'Service' })).toHaveFocus();
+  expect(screen.getByRole('tabpanel')).toHaveTextContent('service history');
+  fireEvent.click(screen.getByRole('tab', { name: 'Fuel' }));
+  expect(screen.getByRole('tabpanel')).toHaveTextContent('fuel history');
+  expect(container.querySelector('.fleet-mobile-add')).toHaveAttribute('href', '/vehicles/v1/edit');
+});

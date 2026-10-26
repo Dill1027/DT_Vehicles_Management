@@ -7,3 +7,8 @@ node_modules
 dist/
 build/
 .DS_Store
+
+# Local dependency backups and environment overrides
+node_modules.backup-*/
+.env.*
+!.env.example

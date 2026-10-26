@@ -219,7 +219,7 @@ DT_Vehicles_Management/
 
 * Node.js ≥ 16
 * npm ≥ 8
-* MongoDB (local or Atlas)
+* MongoDB Atlas or a local replica set (transactions required)
 * Git
 
 ## Configuration
@@ -326,11 +326,10 @@ Base URLs:
 
 ### Authentication
 
-Include a JWT token:
-
-```
-Authorization: Bearer <your-jwt-token>
-```
+Sign in with `POST /api/auth/login` using `{ "email": "...", "password": "..." }`.
+The response sets an HTTP-only session cookie. Browser clients must enable
+credentials (`withCredentials: true` in Axios); command-line clients can use a
+cookie jar. `GET /api/auth/me` returns the signed-in profile.
 
 ### Vehicle Endpoints
 
@@ -339,7 +338,9 @@ GET /api/vehicles
 GET /api/vehicles/:id
 POST /api/vehicles
 PUT /api/vehicles/:id
-DELETE /api/vehicles/:id
+DELETE /api/vehicles/:id  # Archives the vehicle
+PATCH /api/vehicles/:id/archive
+PATCH /api/vehicles/:id/restore
 ```
 
 Example payload:
@@ -430,6 +431,19 @@ npm run analyze:bundle
 2. Verify `REACT_APP_API_URL`
 3. Check CORS config in `server/server.js`
 
+### Atlas DNS connection errors
+
+If Atlas reports `querySrv ECONNREFUSED` or `ETIMEOUT`, configure resolvers for
+this backend process in `server/.env` and restart the backend:
+
+```env
+MONGODB_DNS_SERVERS=1.1.1.1,8.8.8.8
+```
+
+Leave this variable unset to use system DNS. This does not change macOS network
+settings. `read ECONNRESET` can also indicate a network interruption or blocked
+Atlas traffic; check connectivity and the Atlas project network access list if it persists.
+
 ### Database
 
 1. MongoDB service running
@@ -494,3 +508,96 @@ Last updated: October 2025
 [![GitHub issues](https://img.shields.io/github/issues/Dill1027/DT_Vehicles_Management)](https://github.com/Dill1027/DT_Vehicles_Management/issues)
 
 </div>
+
+
+## Accounts, permissions and archive
+
+Every fleet API and document/photo endpoint requires a signed-in account. Sessions
+use an HTTP-only cookie; passwords are stored as bcrypt hashes. Profile changes
+never allow users to change their own role. Role changes and user deletion revoke
+existing sessions.
+
+| Role | View / reports / profile | Add / edit vehicles | Archive / restore | Manage users |
+| --- | --- | --- | --- | --- |
+| Admin | Yes | Yes | Yes | Yes |
+| Editor | Yes | Yes | No | No |
+| Viewer | Yes | No | No | No |
+
+Set `JWT_SECRET` (a long random value), `BOOTSTRAP_ADMIN_EMAIL`, and
+`BOOTSTRAP_ADMIN_PASSWORD` in the ignored `server/.env.local` file. Startup creates
+an administrator only when the users collection is empty. Existing users and
+passwords are never reset on restart. Use `npm run create-admin` in `server` to
+run this setup explicitly. Set `FRONTEND_URL` to the exact frontend origin when
+hosting a different frontend domain; production cookies require HTTPS. For browser
+compatibility, serve the frontend and proxy `/api` and `/uploads` through the same
+origin rather than relying on cross-site cookies.
+
+Vehicles are archived instead of permanently deleted. Admins can access Archive
+and restore records. Active lists, statistics and fleet reports exclude archived
+records; vehicle numbers remain reserved so history stays attached to the vehicle.
+
+### Thumbnails
+
+Card photos use persisted JPEG thumbnails up to 640px instead of full originals.
+New image uploads create a thumbnail, and legacy photos are converted on first
+use. Originals are preserved for the detail gallery. Run `npm run thumbnails` in
+`server` to backfill existing records. The converter uses Sharp when available,
+and macOS provides an additional native `sips` converter (including HEIC).
+On Linux hosting, install Sharp before uploading images; HEIC input requires a
+Sharp/libvips build with HEIF support or conversion to JPEG before upload.
+
+Run backend checks with `cd server && npm test` and frontend checks with
+`cd client && CI=true npm test -- --watchAll=false --runInBand`.
+
+
+## Service history, fuel tracking and activity
+
+Open a vehicle and use **Maintenance** for service/repair entries and **Fuel** for
+fuel fills. Admins and Editors can add/edit entries; Viewers can read them and
+download receipts. Only Admins can remove entries. Removal voids the entry and
+excludes it from totals while preserving its underlying history. Archived vehicles
+are read-only until restored.
+
+Service entries include date, category, work completed, garage/provider, odometer,
+LKR cost, next-service recommendations and notes. Fuel entries include date,
+odometer, litres, LKR cost, station and a full-tank flag. Bills can be PDF, JPEG,
+PNG or WebP up to 5MB. Receipt contents are served separately after authentication
+and never included in list responses or activity entries.
+
+Fuel efficiency uses complete full-tank intervals: all partial fills after the
+previous full tank are included. The first full tank establishes the baseline;
+its initial litres are not counted as fuel consumed in the next interval. Monthly
+costs follow the recorded date and Sri Lanka calendar month. Vehicle-profile
+schedule fields remain separate from recommendations on individual service entries.
+
+Admins can open **Activity** or the vehicle's Activity link to filter changes by
+vehicle, action and Sri Lanka date range. Entries retain actor names/emails and
+before/after values for allowlisted fields, even after accounts are removed.
+Passwords, password hashes, photos and receipt contents are not recorded. The
+activity API is read-only. Historical events before this feature are not invented
+or backfilled.
+
+Vehicle mutations, user administration/profile changes and service/fuel writes
+commit together with their activity entries in MongoDB transactions. MongoDB must
+be a replica set (Atlas already is); a standalone `mongod` cannot support these
+transactional writes. Fuel writes serialize per vehicle to validate odometer order
+and prevent concurrent duplicate fills. New-entry forms also use request IDs so
+a retry after a timeout cannot create a second expense or duplicate activity entry.
+
+Authenticated API routes:
+
+```http
+GET /api/operations/:vehicleId?kind=service&page=1
+GET /api/operations/:vehicleId?kind=fuel&page=1
+POST /api/operations/:vehicleId/:kind
+PATCH /api/operations/:vehicleId/:kind/:recordId
+DELETE /api/operations/:vehicleId/:kind/:recordId
+GET /api/operations/:vehicleId/:kind/:recordId/receipt
+GET /api/activity?action=fuel.updated&from=2026-01-01&to=2026-12-31&page=1
+```
+
+For new-entry POST requests, an optional UUID `requestId` enables safe retries;
+reuse it only with the same payload. Use PATCH to edit an existing record.
+
+Here `kind` is `service` or `fuel`. Records paginate in groups of 20 and activity
+in groups of 25. The activity endpoint is Admin-only.

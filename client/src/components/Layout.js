@@ -4,9 +4,9 @@ import Navigation from './Navigation';
 
 const Layout = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="fleet-app-shell min-h-screen">
       <Navigation />
-      <main className="container mx-auto">
+      <main className="w-full">
         <Outlet />
       </main>
     </div>
