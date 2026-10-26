@@ -29,9 +29,26 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
+    },
+    {
+      "source": "/api/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        }
+      ]
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://dt-vehicles-backend.vercel.app/api/:path*"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "https://dt-vehicles-backend.vercel.app/uploads/:path*"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

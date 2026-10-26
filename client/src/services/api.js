@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { apiBaseURL } from './apiBaseURL';
 import { toast } from 'react-hot-toast';
 
 // Determine if we're in development mode
@@ -6,9 +7,7 @@ const isDev = process.env.NODE_ENV === 'development';
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 // Set up API base URL - Connect to backend server
-const API_BASE_URL = process.env.REACT_APP_API_URL || (isLocalhost
-  ? 'http://localhost:5002/api'
-  : 'https://dt-vehicles-backend.vercel.app/api');
+const API_BASE_URL = apiBaseURL(window.location.hostname, process.env.REACT_APP_API_URL);
 
 // Debug logging
 console.log('🔗 API Configuration:', {
